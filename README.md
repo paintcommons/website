@@ -26,7 +26,7 @@ npx wrangler@4.164.0 pages deploy dist --project-name paintcommons --branch main
 
 ## Content
 
-Contributions through pull requests, APIs, and Stipplewise are described as a planned workflow. Only explicitly submitted and approved information belongs in the public catalog. Published catalog data is CC0; no live submission API is claimed.
+Contributions through pull requests, APIs, and Stipplewise are described as a planned workflow. Only explicitly submitted and approved information belongs in the public catalog. Published catalog data is CC0. The catalogue's correction form is the only submission route on the site (see below).
 
 The visual identity and wording follow the project’s brand brief, while giving Paint Commons its own reference-library character.
 
@@ -73,3 +73,49 @@ Swatch finish rendering follows Stipplewise: speedpaints show three illustrative
 The canonical rules are `dist/catalogue/color/categories.mjs`, exported as **@paintcommons/paint-groups** by this repository’s package manifest. The catalogue imports that module directly; Stipplewise installs an immutable GitHub archive revision of the same package. It uses no runtime network access for classification. When changing these rules, update Stipplewise’s pinned dependency and lockfile in the same release; its parity test checks its wrapper against this package.
 
 Groups distinguish Airbrush colours, Airbrush metallics, and other Metallics. The shared predicates also drive metallic and speedpaint rendering, keeping group and finish decisions consistent. Range names identify airbrush application only where the published range explicitly says Air/Airbrush. Paint records and their source metadata remain unchanged.
+
+## Corrections from the catalogue
+
+Each paint's details have a **Suggest a correction** form. Visitors don't need a GitHub account. `functions/api/corrections.js`, a Cloudflare Pages Function, does four things:
+
+1. It checks a Cloudflare Turnstile token.
+2. It validates the suggestion with the rules in `dist/catalogue/correction-rules.mjs`, which the form also uses.
+3. It reads the paint's current record from `paintcommons/catalog` on GitHub.
+4. It opens an issue labelled `correction` and `needs-review`, authored by the **Paint Commons Corrections** GitHub App.
+
+User text is escaped so it can't mention people, link issues or inject HTML. The issue ends with a hidden `paintcommons-correction` JSON comment for later automation. Nothing about the sender is stored. Until every setting below is in place, the form stays hidden and the dialog links to GitHub's editor as before. Photos aren't supported yet.
+
+### Setup
+
+1. **GitHub App.** In the paintcommons organisation, go to Settings → Developer settings → GitHub Apps → New GitHub App:
+   - name: Paint Commons Corrections
+   - homepage: `https://paintcommons.org`
+   - Webhook: inactive
+   - Repository permissions: **Issues: Read and write** only (Metadata: read is added automatically)
+   - Where can this be installed: only this account
+
+   Generate a private key, then install the App on **paintcommons/catalog** only. Note the App ID, and the installation ID from the end of the installation's settings URL.
+2. **Labels.** Create `correction` and `needs-review` in paintcommons/catalog.
+3. **Turnstile.** In Cloudflare go to Turnstile → Add widget for `paintcommons.org` (and `paintcommons.pages.dev`), mode Managed. Note the site key and secret key.
+4. **Pages settings.** The public values are in `wrangler.jsonc` under `vars`: `TURNSTILE_SITE_KEY`, `GITHUB_APP_ID` (5820966) and `GITHUB_INSTALLATION_ID` (183410451). Because the file declares `vars`, Cloudflare takes plain-text variables from it rather than from the dashboard. Set the two secrets yourself, never in chat or the repository:
+
+   ```sh
+   npx wrangler@4.164.0 pages secret put TURNSTILE_SECRET_KEY --project-name paintcommons
+   npx wrangler@4.164.0 pages secret put GITHUB_APP_PRIVATE_KEY --project-name paintcommons < key.pem
+   ```
+
+   The private key can be PKCS#1 or PKCS#8. Delete the downloaded `.pem` afterwards, or keep it only in a password manager.
+5. **Rate limit.** In Cloudflare go to Security → WAF → Rate limiting rules. Add a rule for URI path equals `/api/corrections` and method `POST`: block for 10 seconds when an IP exceeds 3 requests in 10 seconds.
+6. Redeploy: the Deploy workflow, or `npx wrangler@4.164.0 pages deploy dist --project-name paintcommons --branch main` from the repository root, so `functions/` is included.
+
+### Local testing
+
+Create a git-ignored `.dev.vars` with Cloudflare's always-pass Turnstile test keys and dry-run mode:
+
+```sh
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+CORRECTIONS_DRY_RUN=1
+```
+
+Then run `npx wrangler@4.164.0 pages dev dist` and open `/catalogue/`. Dry-run mode returns the issue it would create instead of calling GitHub.

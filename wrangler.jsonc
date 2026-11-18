@@ -2,5 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "paintcommons",
   "pages_build_output_dir": "./dist",
-  "compatibility_date": "2026-11-17"
+  "compatibility_date": "2026-11-17",
+  // Public settings for the correction form (functions/api/corrections.js). The secrets
+  // TURNSTILE_SECRET_KEY and GITHUB_APP_PRIVATE_KEY are set with `wrangler pages secret put`.
+  "vars": {
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAGHajS5fqgf4N0A2",
+    "GITHUB_APP_ID": "5820966",
+    "GITHUB_INSTALLATION_ID": "183410451"
+  }
 }

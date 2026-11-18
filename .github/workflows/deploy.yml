@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'dist/**'
+      - 'functions/**'
       - 'wrangler.jsonc'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
