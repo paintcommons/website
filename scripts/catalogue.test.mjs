@@ -1,0 +1,22 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {filterPaints,swatchBackground} from '../dist/catalogue/core.mjs';
+const data=JSON.parse(await readFile(new URL('../dist/data/catalogue.json',import.meta.url)));
+const defaults={q:'',brand:'',range:'',type:'',status:'',sort:'brand'};
+test('combined search and filters work on published records',()=>{const result=filterPaints(data.paints,{...defaults,q:'abaddon black',brand:'Citadel',range:'Base',type:'acrylic'});assert.equal(result.length,1);assert.equal(result[0].name,'Abaddon Black');});
+test('barcode and product code searches locate their records',()=>{for(const p of [data.paints.find(p=>p.barcodes.length),data.paints.find(p=>p.code)]){const q=p.code||p.barcodes[0].ean;assert.ok(filterPaints(data.paints,{...defaults,q}).some(r=>r.id===p.id));}const p=data.paints.find(p=>p.barcodes.length);assert.ok(filterPaints(data.paints,{...defaults,q:p.barcodes[0].ean}).some(r=>r.id===p.id));});
+test('impossible filter combinations return no results',()=>{assert.equal(filterPaints(data.paints,{...defaults,brand:'Citadel',range:'Model Color'}).length,0);});
+test('all bundled swatches have published evidence and all equivalent endpoints exist',()=>{const ids=new Set(data.paints.map(p=>p.id));assert.equal(ids.size,data.paints.length);for(const p of data.paints){if(p.colour)assert.ok(data.sources.colour_sources.some(s=>s.id===p.colour.source&&s.status==='published'));}for(const e of data.equivalents){assert.ok(ids.has(e.paint_a));assert.ok(ids.has(e.paint_b));}});
+test('missing swatches stay missing; gradients retain their published stops',()=>{assert.equal(swatchBackground({}),null);const p=data.paints.find(p=>p.colour?.gradient?.length>1);assert.match(swatchBackground(p),/^linear-gradient/);for(const stop of p.colour.gradient)assert.ok(swatchBackground(p).includes(stop));});
+
+test('live refresh pins raw records to the commit rather than the tree SHA',async()=>{const {latestCatalog}=await import('../dist/catalogue/data.mjs');const commit='a'.repeat(40),tree='b'.repeat(40),calls=[];const sample={...data.paints[0]};const payloads=new Map([
+ ['https://api.github.com/repos/paintcommons/catalog/commits/main',{sha:commit,commit:{tree:{sha:tree},committer:{date:'2026-11-18T00:00:00Z'}}}],
+ [`https://api.github.com/repos/paintcommons/catalog/git/trees/${tree}?recursive=1`,{sha:tree,tree:[{type:'blob',path:'paints/sample/range.json'},{type:'blob',path:'sources.json'},{type:'blob',path:'equivalents.json'}]}],
+ [`https://raw.githubusercontent.com/paintcommons/catalog/${commit}/paints/sample/range.json`,[sample]],
+ [`https://raw.githubusercontent.com/paintcommons/catalog/${commit}/sources.json`,data.sources],
+ [`https://raw.githubusercontent.com/paintcommons/catalog/${commit}/equivalents.json`,[]]
+]);const fetcher=async url=>{calls.push(url);assert.ok(payloads.has(url),url);return {ok:true,json:async()=>payloads.get(url)};};const latest=await latestCatalog('',{fetcher});assert.equal(latest.revision,commit);assert.equal(latest.paints.length,1);assert.equal(latest.paints[0].file,'paints/sample/range.json');calls.length=0;assert.equal(await latestCatalog(commit,{fetcher}),null);assert.equal(calls.length,1);});
+
+test('colour wall keeps every paint distinct and every ramp dark to light',async()=>{const {sectionsOf,packColumns,colourCompare,colourMeta}=await import('../dist/catalogue/wall.mjs');const sorted=[...data.paints].sort(colourCompare);const sections=sectionsOf(sorted,'type'),wall=[];for(const sec of sections){const packed=packColumns(sec.paints,20);for(const band of packed.bands)for(const col of band){wall.push(...col.paints);for(let i=1;i<col.paints.length;i++)assert.ok(colourMeta(col.paints[i]).lightness>=colourMeta(col.paints[i-1]).lightness);}}assert.equal(wall.length,data.paints.length);assert.equal(new Set(wall.map(p=>p.id)).size,data.paints.length);});
+test('range grouping is by manufacturer and range, with colour order retained',async()=>{const {sectionsOf,colourCompare}=await import('../dist/catalogue/wall.mjs');const groups=sectionsOf([...data.paints].sort(colourCompare),'range');for(const group of groups){assert.ok(group.paints.every(p=>`${p.brand} · ${p.range||'Other'}`===group.label));for(let i=1;i<group.paints.length;i++)assert.ok(colourCompare(group.paints[i-1],group.paints[i])<=0);}});

@@ -26,9 +26,9 @@ npx wrangler@4.164.0 pages deploy dist --project-name paintcommons --branch main
 
 ## Content
 
-Contributions through pull requests, APIs, and Stipplewise are described as a planned workflow. Only explicitly submitted and approved information belongs in the public catalog. No final catalog license or live submission API is claimed.
+Contributions through pull requests, APIs, and Stipplewise are described as a planned workflow. Only explicitly submitted and approved information belongs in the public catalog. Published catalog data is CC0; no live submission API is claimed.
 
-The visual identity and wording follow the project’s brand brief, while giving Paint Commons its own reference-library character. The project has no affiliation with Wikipedia or Creative Commons.
+The visual identity and wording follow the project’s brand brief, while giving Paint Commons its own reference-library character.
 
 ## Automatic deployment setup
 
@@ -42,3 +42,26 @@ The workflow in `.github/workflows/deploy.yml` deploys changes to `dist/` on `ma
 4. Run **Deploy website to Cloudflare Pages** from the Actions tab to verify the connection. Subsequent website changes on `main` deploy automatically.
 
 The custom domain [paintcommons.org](https://paintcommons.org) is connected to this Pages project through a proxied root CNAME targeting `paintcommons.pages.dev`. The `pages.dev` address also remains available.
+
+## Browsable catalogue
+
+`/catalogue/` provides search by name, code or barcode; brand, range, type and availability filters; a colour wall, cards/list views, grouping by paint type or brand/range, and pagination for cards/list; and shareable paint records with sources and barcode provenance. Paint swatches are explicitly approximate. No collection or account data is used.
+
+`dist/data/catalogue.json` is a bundled, revision-labelled public catalog snapshot. The browser checks GitHub for a newer revision and loads it in the background, falling back to the bundled data on network errors or rate limits. Source records and corrections link back to the canonical catalog repository.
+
+To refresh the bundled fallback from a local checkout of the public catalog:
+
+```sh
+node scripts/sync-catalog.mjs /path/to/catalog
+node --test scripts/catalogue.test.mjs
+```
+
+Catalog data carries the repository’s CC0 dedication in `dist/data/LICENSE`; upstream source credits are retained in the JSON and shown in record details.
+
+## WWW redirect
+
+Cloudflare Single Redirect matches `http.host eq "www.paintcommons.org"` and returns HTTP 301 to `concat("https://paintcommons.org", http.request.uri.path)`, preserving the query string. A proxied `www` A record uses Cloudflare’s redirect-only address `192.0.2.1`.
+
+### Colour wall ordering
+
+The wall adapts Stipplewise’s existing shared OKLab colour ramps, paint categories, and dark-to-light rack packing. The adapted MIT modules and their licence are in `dist/catalogue/color/`. Every catalog record stays separate, even when swatches are visually similar. Family assignments are derived presentation data and do not modify the catalog schema or imply a paint equivalence. Wall grouping can be switched to brand and range. Swatch size controls reveal names at larger sizes.
