@@ -1,3 +1,4 @@
+import {splitRun} from './color/packing.mjs';
 import {hexToOklab} from './color/oklch.mjs';
 import {swatchKind} from './swatch.mjs';
 // Catalogue adapter for Stipplewise's brand-neutral colour ramps and rack layout.
@@ -11,16 +12,22 @@ export function colourCompare(a,b){const aa=colourMeta(a),bb=colourMeta(b);retur
 export function sectionsOf(paints,group='type'){
  const groups=new Map();for(const p of paints){const key=group==='type'?categoryOf(p):group==='brand'?p.brand:group==='range'?`${p.brand} · ${p.range||'Other'}`:'all';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(p);}
  const typeOrder=new Map(CATEGORIES.map(([key],i)=>[key,i]));
- return [...groups].sort(([a],[b])=>group==='type'?typeOrder.get(a)-typeOrder.get(b):a.localeCompare(b)).map(([key,paints])=>({key,label:group==='type'?categoryLabel(key,'uk'):group==='none'?'All paints':key,paints}));
+ return [...groups].sort(([a],[b])=>group==='type'?typeOrder.get(a)-typeOrder.get(b):a.localeCompare(b)).map(([key,paints])=>({key,label:group==='type'?categoryLabel(key,'uk').replace(/ & /g,' and '):group==='none'?'All paints':key,paints}));
 }
-// Adapted from Stipplewise packColumns: a ramp runs down a column, dark to light;
-// long ramps fold into the next column, and bands keep a strict rack grid.
+// A broad family can contain parallel warm/cool and muted/vivid runs. Partition
+// those variations before sorting each column dark to light; slicing one global
+// lightness list makes every column alternate between unrelated shades.
 export function packColumns(paints,cols){
  const runs=[];for(const p of paints){const family=colourMeta(p.paint||p).family;const last=runs.at(-1);if(!last||last.family!==family)runs.push({family,paints:[p]});else last.paints.push(p);}
- const chunk=(run,h)=>{const n=Math.ceil(run.length/h),out=[];for(let k=0,i=0;k<n;k++){const size=Math.ceil((run.length-i)/(n-k));out.push(run.slice(i,i+size));i+=size;}return out;};
- let best=null,cost=Infinity;const longest=Math.max(1,...runs.map(r=>r.paints.length));
- for(let h=1;h<=Math.min(longest,10);h++){const columns=runs.flatMap(r=>chunk(r.paints,h).map(paints=>({family:r.family,paints})));const bands=[];for(let i=0;i<columns.length;i+=cols)bands.push(columns.slice(i,i+cols));const folds=runs.reduce((n,r)=>n+Math.ceil(r.paints.length/h)-1,0);const score=bands.length*h+(bands.length-1)*.5+folds*.35;if(score<=cost){cost=score;best={bands,fold:h};}}
- return best||{bands:[],fold:1};
+ let fold=1,cost=Infinity;const longest=Math.max(1,...runs.map(r=>r.paints.length));
+ for(let h=1;h<=Math.min(longest,10);h++){
+  const columns=runs.reduce((n,r)=>n+Math.ceil(r.paints.length/h),0),bands=Math.ceil(columns/cols),folds=columns-runs.length;
+  const score=bands*h+(bands-1)*.5+folds*.35;
+  if(score<=cost){cost=score;fold=h;}
+ }
+ const columns=runs.flatMap(r=>splitRun(r.paints,fold,{hexOf:t=>(t.paint||t).colour?.hex,familyOf:t=>colourMeta(t.paint||t).family,compare:(a,b)=>colourCompare(a.paint||a,b.paint||b)}).map(paints=>({family:r.family,paints}))),bands=[];
+ for(let i=0;i<columns.length;i+=cols)bands.push(columns.slice(i,i+cols));
+ return {bands,fold};
 }
 
 // Stipplewise's same-colour rule: OKLab distance < .025, same family, across

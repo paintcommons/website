@@ -1,0 +1,326 @@
+[
+  {
+    "key": "neutral",
+    "label": "Neutral greys",
+    "anchors": [
+      "#D8D8DA",
+      "#C5C6C9",
+      "#8F9294",
+      "#727880",
+      "#535663",
+      "#000000"
+    ]
+  },
+  {
+    "key": "warmgrey",
+    "label": "Warm greys",
+    "anchors": [
+      "#FFFFFF",
+      "#E4E2D8",
+      "#CBC8B8",
+      "#C4BDAF",
+      "#B1AC9C",
+      "#9B9A8F"
+    ]
+  },
+  {
+    "key": "bone",
+    "label": "Bone",
+    "anchors": [
+      "#F2ECD7",
+      "#E9D9C1",
+      "#D4CAA9",
+      "#C6BA98",
+      "#AB9C7E",
+      "#91856E"
+    ]
+  },
+  {
+    "key": "khaki",
+    "label": "Khaki & leather",
+    "anchors": [
+      "#DEBCAB",
+      "#B99889",
+      "#9E7B6C",
+      "#694433",
+      "#4C332C",
+      "#2C241F"
+    ]
+  },
+  {
+    "key": "sand",
+    "label": "Sand & ochre",
+    "anchors": [
+      "#DEBC6C",
+      "#C19C50",
+      "#A98C4E",
+      "#897440",
+      "#6F683E",
+      "#52533B"
+    ]
+  },
+  {
+    "key": "yellow",
+    "label": "Yellows",
+    "anchors": [
+      "#FFEFAE",
+      "#FFE481",
+      "#FFD434",
+      "#FECB00",
+      "#E49D0E",
+      "#D37933"
+    ]
+  },
+  {
+    "key": "orange",
+    "label": "Oranges & flame",
+    "anchors": [
+      "#FDCA53",
+      "#F59829",
+      "#F28629",
+      "#F07500",
+      "#ED5717",
+      "#EA4326"
+    ]
+  },
+  {
+    "key": "scarlet",
+    "label": "Scarlets",
+    "anchors": [
+      "#F28E7F",
+      "#EF735A",
+      "#EC563E",
+      "#EA3A30",
+      "#D2212C",
+      "#992426"
+    ]
+  },
+  {
+    "key": "crimson",
+    "label": "Crimsons",
+    "anchors": [
+      "#E55D5A",
+      "#D63E43",
+      "#B90119",
+      "#BE2131",
+      "#9C2E3D",
+      "#712836"
+    ]
+  },
+  {
+    "key": "rosyskin",
+    "label": "Rosy skins",
+    "anchors": [
+      "#FDE6DC",
+      "#FBD5C7",
+      "#F8BCA8",
+      "#F49A7D",
+      "#D88779",
+      "#C87B71"
+    ]
+  },
+  {
+    "key": "warmskin",
+    "label": "Warm skins",
+    "anchors": [
+      "#E9B9B3",
+      "#E39D8B",
+      "#BE7772",
+      "#B5564D",
+      "#944E4E",
+      "#644245"
+    ]
+  },
+  {
+    "key": "deepskin",
+    "label": "Earthy skins",
+    "anchors": [
+      "#F1D4B5",
+      "#EECA9F",
+      "#C7A482",
+      "#896B5A",
+      "#6C4F48",
+      "#4B4344"
+    ]
+  },
+  {
+    "key": "brown",
+    "label": "Browns",
+    "anchors": [
+      "#B77867",
+      "#9B5B4D",
+      "#7D4742",
+      "#643B2E",
+      "#513930",
+      "#3C2C29"
+    ]
+  },
+  {
+    "key": "wine",
+    "label": "Wine & berry",
+    "anchors": [
+      "#EEC8DA",
+      "#E6B3C8",
+      "#D18DA8",
+      "#AB5578",
+      "#81344E",
+      "#663746"
+    ]
+  },
+  {
+    "key": "pink",
+    "label": "Pinks",
+    "anchors": [
+      "#FBDCEA",
+      "#F7BCD5",
+      "#E395BE",
+      "#D96AA5",
+      "#D94C95",
+      "#CD0079"
+    ]
+  },
+  {
+    "key": "magenta",
+    "label": "Magentas",
+    "anchors": [
+      "#D8A2C8",
+      "#B867A4",
+      "#B04492",
+      "#843F90",
+      "#6F328A",
+      "#56286A"
+    ]
+  },
+  {
+    "key": "violet",
+    "label": "Violets",
+    "anchors": [
+      "#DCCFE6",
+      "#B19CC8",
+      "#9482BA",
+      "#6C5AA1",
+      "#5F4796",
+      "#363246"
+    ]
+  },
+  {
+    "key": "greyblue",
+    "label": "Grey-blues",
+    "anchors": [
+      "#A5C2DE",
+      "#7B97B3",
+      "#577CA4",
+      "#32628E",
+      "#355577",
+      "#394858"
+    ]
+  },
+  {
+    "key": "blue",
+    "label": "Blues",
+    "anchors": [
+      "#B6C3E3",
+      "#8497CA",
+      "#697BB9",
+      "#264587",
+      "#2A3971",
+      "#1B2B52"
+    ]
+  },
+  {
+    "key": "brightblue",
+    "label": "Bright blues",
+    "anchors": [
+      "#94CFF0",
+      "#0190CE",
+      "#006CB4",
+      "#0057A5",
+      "#004A84",
+      "#003560"
+    ]
+  },
+  {
+    "key": "oceanblue",
+    "label": "Ocean blues",
+    "anchors": [
+      "#41AFD1",
+      "#009FC7",
+      "#0086AD",
+      "#006A93",
+      "#004F6B",
+      "#223242"
+    ]
+  },
+  {
+    "key": "turquoise",
+    "label": "Turquoise",
+    "anchors": [
+      "#9ED5D3",
+      "#80CBD1",
+      "#5CC1C7",
+      "#28ADB4",
+      "#008F94",
+      "#006A78"
+    ]
+  },
+  {
+    "key": "teal",
+    "label": "Teals",
+    "anchors": [
+      "#6BC1AF",
+      "#2EB39B",
+      "#00A485",
+      "#00765C",
+      "#005E4F",
+      "#1F3C42"
+    ]
+  },
+  {
+    "key": "sage",
+    "label": "Sage & moss",
+    "anchors": [
+      "#B7DCBE",
+      "#A7C9AB",
+      "#78AC95",
+      "#64937D",
+      "#447B6B",
+      "#3D665E"
+    ]
+  },
+  {
+    "key": "green",
+    "label": "Greens",
+    "anchors": [
+      "#75BC69",
+      "#3BAB41",
+      "#179239",
+      "#066D2C",
+      "#216143",
+      "#1F3E2B"
+    ]
+  },
+  {
+    "key": "lime",
+    "label": "Limes",
+    "anchors": [
+      "#E7EA89",
+      "#D2DB39",
+      "#BDD000",
+      "#8BBD0D",
+      "#72B61C",
+      "#55AF30"
+    ]
+  },
+  {
+    "key": "olive",
+    "label": "Olives",
+    "anchors": [
+      "#B8C89F",
+      "#A1AC82",
+      "#728552",
+      "#627247",
+      "#4E6038",
+      "#3F4C34"
+    ]
+  }
+]

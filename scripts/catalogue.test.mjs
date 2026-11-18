@@ -30,3 +30,88 @@ test('colour grouping compares with the lead and does not form a transitive chai
 
 test('shared grouping separates metallic airbrush ranges from airbrush colours',async()=>{const {categoryOf,categoryLabel,GROUPING_VERSION}=await import('../dist/catalogue/color/categories.mjs');assert.equal(GROUPING_VERSION,'1.0.0');for(const range of ['Air','Model Air','Game Air','True Metallic Metal Airbrush'])assert.equal(categoryOf({type:'metallic',range}),'airbrush-metallic',range);assert.equal(categoryOf({type:'acrylic',range:'Model Air'}),'airbrush');assert.equal(categoryOf({type:'metallic',range:'Metal Color'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'True Metallic Metal Base'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'Contrast'}),'speedpaint');assert.equal(categoryOf({type:'wash',range:'Game Wash'}),'wash');assert.equal(categoryLabel('airbrush'),'Airbrush colors');assert.equal(categoryLabel('airbrush','uk'),'Airbrush colours');});
 test('airbrush metallic wall groups contain no ordinary airbrush paints',async()=>{const {categoryOf,isAirbrushPaint,isMetallicPaint}=await import('../dist/catalogue/color/categories.mjs');const metals=data.paints.filter(p=>isAirbrushPaint(p)&&isMetallicPaint(p)&&!(/fluo/i.test(p.range||'')||/fluorescent/i.test(p.name)));assert.ok(metals.length>=22);for(const p of metals)assert.equal(categoryOf(p),'airbrush-metallic',p.name);for(const p of data.paints.filter(p=>categoryOf(p)==='airbrush'))assert.equal(isMetallicPaint(p),false,p.name);});
+
+
+test('broader runs preserve all 27 original Fanatic groups',async()=>{
+ const {rampOf}=await import('../dist/catalogue/color/ramps.mjs');
+ const anchors=JSON.parse(await readFile(new URL('./fixtures/fanatic-runs.json',import.meta.url)));
+ assert.equal(anchors.length,27);
+ for(const run of anchors)for(const hex of run.anchors)assert.equal(rampOf(hex),run.key,`${run.label}: ${hex}`);
+});
+test('broader catalogue separates drabs, ochres, earths, golden skins and olive variants',async()=>{
+ const {rampOf}=await import('../dist/catalogue/color/ramps.mjs');
+ for(const [hex,name,run]of [
+  ['#343424','Dark Green','olivedrab'],['#AE7929','Khemri Sands 3','goldenochre'],
+  ['#756858','Baneblade Brown','earth'],['#FECA85','Warm Flesh','goldenskin'],
+  ['#98A890','Faded Green','greyolive'],['#BFBD80','Krieg Khaki','yellowolive'],
+ ]){assert.ok(data.paints.some(p=>p.colour?.hex===hex),`published anchor ${hex}`);assert.equal(rampOf(hex,name),run,name);}
+ assert.notEqual(rampOf('#7A8A3C','Orc Skin'),'goldenskin');
+ assert.notEqual(rampOf('#B3A660','Dead Flesh'),'goldenskin');
+});
+test('expanded wall retains every cluster and dark-to-light columns at multiple widths',async()=>{
+ const {colourCompare,colourMeta,combineLikeColours,packColumns,sectionsOf}=await import('../dist/catalogue/wall.mjs');
+ for(const sec of sectionsOf([...data.paints].sort(colourCompare))){
+  const tiles=combineLikeColours(sec.paints);
+  for(const width of [3,12,25]){
+   const {bands}=packColumns(tiles,width),seen=[];
+   for(const band of bands){assert.ok(band.length<=width);for(const col of band){
+    seen.push(...col.paints);
+    for(let i=1;i<col.paints.length;i++)assert.ok(colourMeta(col.paints[i].paint).lightness>=colourMeta(col.paints[i-1].paint).lightness);
+   }}
+   assert.equal(seen.length,tiles.length);assert.equal(new Set(seen).size,tiles.length);
+  }
+ }
+});
+
+test('parallel columns reduce hue and chroma jumps in the reviewed colour families',async()=>{
+ const {colourCompare,colourMeta,combineLikeColours,packColumns,sectionsOf}=await import('../dist/catalogue/wall.mjs');
+ const {rampOffset}=await import('../dist/catalogue/color/ramps.mjs');
+ const tiles=combineLikeColours(sectionsOf([...data.paints].sort(colourCompare))[0].paints);
+ const {bands,fold}=packColumns(tiles,25),columns=bands.flat();
+ const jumps=columns=>columns.reduce((sum,column)=>sum+column.slice(1).reduce((n,t,i)=>{
+  const p=column[i].paint,q=t.paint,a=rampOffset(p.colour.hex,colourMeta(p).family),b=rampOffset(q.colour.hex,colourMeta(q).family);
+  return n+(a.a-b.a)**2+(a.b-b.b)**2;
+ },0),0);
+ for(const family of ['goldenochre','khaki','rosyskin','deepskin','goldenskin','brown']){
+  const run=tiles.filter(t=>colourMeta(t.paint).family===family),count=Math.ceil(run.length/fold),baseline=[];
+  for(let k=0,i=0;k<count;k++){const size=Math.ceil((run.length-i)/(count-k));baseline.push(run.slice(i,i+size));i+=size;}
+  assert.ok(jumps(columns.filter(c=>c.family===family).map(c=>c.paints))<jumps(baseline)*.9,`${family} has fewer abrupt colour jumps`);
+ }
+});
+test('dark purple keeps its wine hue and Light Brown stays with browns rather than yellows',async()=>{
+ const {rampOf}=await import('../dist/catalogue/color/ramps.mjs');
+ assert.equal(rampOf('#442633','Dark Purple'),'wine');
+ assert.ok(['brown','khaki','earth'].includes(rampOf('#A05A31','Light Brown')));
+});
+
+
+test('uniform and camouflage names exclude skin runs without forcing one military hue',async()=>{
+ const {rampOf}=await import('../dist/catalogue/color/ramps.mjs');
+ const skins=new Set(['rosyskin','warmskin','deepskin','goldenskin']);
+ for(const [hex,name]of [
+  ['#684F3B','Steel Legion Drab'],['#92795B','Khaki Brown'],
+  ['#AF8F6F','Camouﬂ age Brown'],['#8B7260','USAF Brown'],
+  ['#967650','Sand Yellow RLM79'],['#C0966A','USAF Tan'],
+  ['#816644','US Field Drab'],['#7C6238','Khaki Grey'],
+  ['#A87944','Khaki Drill'],['#92795B','Field Grey'],
+  ['#92795B','Fieldgray'],['#92795B','NATO Brown'],
+ ])assert.ok(!skins.has(rampOf(hex,name)),name);
+ assert.equal(rampOf('#3F4C34','Uniform Green'),'olive');
+ assert.equal(rampOf('#92795B','Khaki Brown'),rampOf('#92795B','KHAKI BROWN'));
+ assert.ok(skins.has(rampOf('#C6B49D','Olive Flesh')));
+ assert.ok(skins.has(rampOf('#92795B','Khaki Skin')));
+ assert.equal(rampOf(null,'Khaki Brown'),'unknown');
+});
+
+
+test('fantasy creature hides follow their swatch rather than the leather rule',async()=>{
+ const {rampOf,isWoodOrLeather}=await import('../dist/catalogue/color/ramps.mjs');
+ for(const [hex,name,expected]of [
+  ['#AE8E41','Hobgrot Hide','sand'],
+  ['#7E3331','Verminlord Hide','crimson'],
+  ['#585067','Daemonette Hide','violet'],
+ ]){assert.equal(isWoodOrLeather(hex,name),false,name);assert.equal(rampOf(hex,name),expected,name);}
+ assert.equal(isWoodOrLeather('#362C2A','Rhinox Hide'),true);
+ assert.equal(rampOf('#362C2A','Rhinox Hide'),'brown');
+ assert.equal(isWoodOrLeather('#6E4A33','Leather Brown'),true);
+});

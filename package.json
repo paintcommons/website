@@ -1,6 +1,6 @@
 {
   "name": "@paintcommons/paint-groups",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Shared Paint Commons and Stipplewise paint grouping rules.",
@@ -8,13 +8,18 @@
   "files": [
     "dist/catalogue/color/categories.mjs",
     "dist/catalogue/color/categories.d.ts",
-    "dist/catalogue/color/LICENSE"
+    "dist/catalogue/color/LICENSE",
+    "dist/catalogue/color/ramps.mjs",
+    "dist/catalogue/color/packing.mjs",
+    "dist/catalogue/color/oklch.mjs"
   ],
   "exports": {
     ".": {
       "types": "./dist/catalogue/color/categories.d.ts",
       "default": "./dist/catalogue/color/categories.mjs"
-    }
+    },
+    "./ramps": "./dist/catalogue/color/ramps.mjs",
+    "./packing": "./dist/catalogue/color/packing.mjs"
   },
   "scripts": {
     "test": "node --test scripts/catalogue.test.mjs"
