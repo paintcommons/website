@@ -41,4 +41,4 @@ The workflow in `.github/workflows/deploy.yml` deploys changes to `dist/` on `ma
 3. The **CLOUDFLARE_ACCOUNT_ID** repository variable is configured separately; it is not a secret.
 4. Run **Deploy website to Cloudflare Pages** from the Actions tab to verify the connection. Subsequent website changes on `main` deploy automatically.
 
-The custom domain `paintcommons.org` still requires domain activation and DNS configuration. The `pages.dev` address works independently.
+The custom domain [paintcommons.org](https://paintcommons.org) is connected to this Pages project through a proxied root CNAME targeting `paintcommons.pages.dev`. The `pages.dev` address also remains available.
