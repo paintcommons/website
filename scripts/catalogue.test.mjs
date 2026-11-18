@@ -22,7 +22,7 @@ test('colour wall keeps every paint distinct and every ramp dark to light',async
 test('range grouping is by manufacturer and range, with colour order retained',async()=>{const {sectionsOf,colourCompare}=await import('../dist/catalogue/wall.mjs');const groups=sectionsOf([...data.paints].sort(colourCompare),'range');for(const group of groups){assert.ok(group.paints.every(p=>`${p.brand} · ${p.range||'Other'}`===group.label));for(let i=1;i<group.paints.length;i++)assert.ok(colourCompare(group.paints[i-1],group.paints[i])<=0);}});
 
 
-test('every metallic gets a sheen, including airbrush metallics without source gradients',async()=>{const {swatchKind}=await import('../dist/catalogue/swatch.mjs');for(const p of data.paints.filter(p=>p.type==='metallic')){assert.equal(swatchKind(p),'metal',p.name);assert.match(swatchBackground(p),/^linear-gradient\(45deg/);assert.ok(swatchBackground(p).includes('#FFFFFF 100%'));}});
+test('every metallic gets a sheen, including airbrush metallics without source gradients',async()=>{const {swatchKind}=await import('../dist/catalogue/swatch.mjs');for(const p of data.paints.filter(p=>p.type==='metallic')){assert.equal(swatchKind(p),'metal',p.name);assert.match(swatchBackground(p),/^linear-gradient\(45deg/);const {swatchStops,METAL_LIGHT_END}=await import('../dist/catalogue/swatch.mjs');const {hexToOklab}=await import('../dist/catalogue/color/oklch.mjs');assert.ok(hexToOklab(swatchStops(p)[3]).L>=METAL_LIGHT_END,p.name+' ends very light');}});
 test('all speedpaint and contrast-style swatches use three hard bands',async()=>{const {categoryOf}=await import('../dist/catalogue/color/categories.mjs');for(const p of data.paints.filter(p=>categoryOf(p)==='speedpaint'&&p.type!=='metallic')){const bg=swatchBackground(p);assert.match(bg,/0 33\.4%/);assert.match(bg,/33\.4% 66\.7%/);assert.match(bg,/66\.7% 100%/);assert.ok(bg.includes(p.colour.hex));}});
 test('similar colours combine across brands but keep finish, family and missing colours distinct',async()=>{const {combineLikeColours}=await import('../dist/catalogue/wall.mjs');const p=(id,brand,hex,type='acrylic')=>({id,brand,name:id,range:'Test',type,colour:hex?{hex}:undefined});const paints=[p('a','A','#808080'),p('b','B','#808080'),p('c','A','#808080'),p('d','C','#808080','metallic'),p('e','D','#0000FF'),p('f','E',null),p('g','F',null)];const combined=combineLikeColours(paints);assert.equal(combined.length,6);assert.deepEqual(combined[0].paints.map(p=>p.id),['a','b']);assert.equal(combined.flatMap(c=>c.paints).length,paints.length);assert.equal(combineLikeColours(paints,false).length,paints.length);});
 test('colour grouping compares with the lead and does not form a transitive chain',async()=>{const {combineLikeColours}=await import('../dist/catalogue/wall.mjs');const paints=['#808080','#878787','#8E8E8E'].map((hex,i)=>({id:String(i),name:'Grey',brand:String(i),range:'Test',type:'acrylic',colour:{hex}}));const grouped=combineLikeColours(paints);assert.deepEqual(grouped.map(c=>c.paints.length),[2,1]);});
@@ -114,4 +114,21 @@ test('fantasy creature hides follow their swatch rather than the leather rule',a
  assert.equal(isWoodOrLeather('#362C2A','Rhinox Hide'),true);
  assert.equal(rampOf('#362C2A','Rhinox Hide'),'brown');
  assert.equal(isWoodOrLeather('#6E4A33','Leather Brown'),true);
+});
+
+test('stored stops drive the finish: metallic sweeps, speedpaint and wash positions, nulls generated',async()=>{
+ const {swatchKind,swatchStops,sourceGradient,isWashOrGlaze}=await import('../dist/catalogue/swatch.mjs');
+ const paint=(type,range,name,hex,gradient=null)=>({type,range,name,colour:{hex,gradient,source:'x'}});
+ const sweep=paint('metallic','Metal Color','Aluminium','#8B8B91',['#8B8B91','#A0A0A5','#C3C3C6','#CCCCCF','#B1B1B5','#9F9FA4','#939399']);
+ assert.deepEqual(swatchStops(sweep).slice(0,3),['#8B8B91','#8B8B91','#CCCCCF']);
+ assert.equal(swatchStops(sweep)[3],'#F4F4F2','a near-white end when the source has none');
+ assert.deepEqual(swatchStops(paint('speedpaint','Pro Acryl 1-Step','Blue','#086CB1',['#0E447E','#086CB1','#0393D7'])),['#0E447E','#086CB1','#0393D7']);
+ assert.deepEqual(swatchStops(paint('speedpaint','Contrast','Creed Camo','#B7CE9A',['#145D2E','#B7CE9A'])).slice(0,2),['#145D2E','#B7CE9A']);
+ const wash=paint('wash','Pro Acryl','Black Wash','#080605',[null,'#080605','#838282']);
+ assert.equal(swatchKind(wash),'smooth');
+ assert.deepEqual(swatchStops(wash).slice(1),['#080605','#838282']);
+ assert.equal(sourceGradient(wash),'linear-gradient(120deg, #080605, #838282)','the evidence strip skips empty positions');
+ assert.ok(isWashOrGlaze({type:'acrylic',range:'Glaze',name:'Lamenters Yellow'}));
+ assert.ok(!isWashOrGlaze({type:'acrylic',range:'Model Color',name:'Washed Out Blue'}));
+ for(const p of data.paints.filter(p=>p.type==='wash'&&p.colour))assert.notEqual(swatchKind(p),'flat',p.name+' (metallic washes such as Gemstone keep their shine)');
 });
