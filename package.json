@@ -1,9 +1,9 @@
 {
   "name": "@paintcommons/paint-groups",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "Shared Paint Commons and Stipplewise paint grouping rules.",
+  "description": "Shared Paint Commons and Stipplewise paint grouping, swatch and colour-wall rules.",
   "license": "MIT",
   "files": [
     "dist/catalogue/color/categories.mjs",
@@ -11,7 +11,11 @@
     "dist/catalogue/color/LICENSE",
     "dist/catalogue/color/ramps.mjs",
     "dist/catalogue/color/packing.mjs",
-    "dist/catalogue/color/oklch.mjs"
+    "dist/catalogue/color/oklch.mjs",
+    "dist/catalogue/color/swatch.mjs",
+    "dist/catalogue/color/swatch.d.ts",
+    "dist/catalogue/color/wall.mjs",
+    "dist/catalogue/color/wall.d.ts"
   ],
   "exports": {
     ".": {
@@ -19,7 +23,15 @@
       "default": "./dist/catalogue/color/categories.mjs"
     },
     "./ramps": "./dist/catalogue/color/ramps.mjs",
-    "./packing": "./dist/catalogue/color/packing.mjs"
+    "./packing": "./dist/catalogue/color/packing.mjs",
+    "./swatch": {
+      "types": "./dist/catalogue/color/swatch.d.ts",
+      "default": "./dist/catalogue/color/swatch.mjs"
+    },
+    "./wall": {
+      "types": "./dist/catalogue/color/wall.d.ts",
+      "default": "./dist/catalogue/color/wall.mjs"
+    }
   },
   "scripts": {
     "test": "node --test scripts/catalogue.test.mjs"
