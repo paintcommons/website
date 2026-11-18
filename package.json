@@ -1,0 +1,22 @@
+{
+  "name": "@paintcommons/paint-groups",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Paint Commons and Stipplewise paint grouping rules.",
+  "license": "MIT",
+  "files": [
+    "dist/catalogue/color/categories.mjs",
+    "dist/catalogue/color/categories.d.ts",
+    "dist/catalogue/color/LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/catalogue/color/categories.d.ts",
+      "default": "./dist/catalogue/color/categories.mjs"
+    }
+  },
+  "scripts": {
+    "test": "node --test scripts/catalogue.test.mjs"
+  }
+}
