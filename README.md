@@ -97,7 +97,7 @@ User text is escaped so it can't mention people, link issues or inject HTML. The
    Generate a private key, then install the App on **paintcommons/catalog** only. Note the App ID, and the installation ID from the end of the installation's settings URL.
 2. **Labels.** Create `correction` and `needs-review` in paintcommons/catalog.
 3. **Turnstile.** In Cloudflare go to Turnstile → Add widget for `paintcommons.org` (and `paintcommons.pages.dev`), mode Managed. Note the site key and secret key.
-4. **Pages settings.** The public values are in `wrangler.jsonc` under `vars`: `TURNSTILE_SITE_KEY`, `GITHUB_APP_ID` (5820966) and `GITHUB_INSTALLATION_ID` (183410451). Because the file declares `vars`, Cloudflare takes plain-text variables from it rather than from the dashboard. Set the two secrets yourself, never in chat or the repository:
+4. **Pages settings.** The public values are in `wrangler.jsonc` under `vars`: `TURNSTILE_SITE_KEY`, `GITHUB_APP_ID` (5820966) and `GITHUB_INSTALLATION_ID` (183418682; it changes if the App is uninstalled and reinstalled). Because the file declares `vars`, Cloudflare takes plain-text variables from it rather than from the dashboard. Set the two secrets yourself, never in chat or the repository:
 
    ```sh
    npx wrangler@4.164.0 pages secret put TURNSTILE_SECRET_KEY --project-name paintcommons

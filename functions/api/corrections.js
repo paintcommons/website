@@ -28,7 +28,7 @@ export function onRequestGet({ env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!configured(env)) return fail(503, 'Corrections can’t be sent from this site yet.');
+  if (!configured(env)) return fail(409, 'Corrections can’t be sent from this site yet.');
   const origin = request.headers.get('origin');
   if (origin !== new URL(request.url).origin) return fail(403, 'Send corrections from the Paint Commons catalogue.');
   const text = await request.text();
@@ -76,7 +76,7 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: true, number: created.number, url: created.html_url });
   } catch (err) {
     console.error('Creating the correction issue failed', err);
-    return fail(502, 'GitHub didn’t accept the suggestion. Try again in a few minutes.');
+    return fail(424, 'GitHub didn’t accept the suggestion. Try again in a few minutes.');
   }
 }
 

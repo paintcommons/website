@@ -195,7 +195,7 @@ function correctionForm(paint, editUrl) {
       form.replaceWith(done);
     } catch (err) {
       message.className = 'correction-message error';
-      message.textContent = err.message || 'Sending failed. Try again.';
+      message.textContent = err.message || 'Sending failed. Try again, or use “Edit on GitHub instead”.';
       send.disabled = false;
       token = '';
       if (widgetId !== null) window.turnstile?.reset(widgetId);
