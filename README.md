@@ -4,7 +4,7 @@ The landing page for **paintcommons.org**, an open, living miniature paint refer
 
 ## Development
 
-The website is plain HTML and CSS. There are no application dependencies or build step. Serve `dist/` with any static HTTP server:
+The website is plain HTML and CSS. There are no application dependencies. Production deployments rebuild the bundled data from the public catalogue. Serve `dist/` with any static HTTP server:
 
 ```sh
 python3 -m http.server 8765 --directory dist
@@ -34,7 +34,11 @@ The visual identity and wording follow the project’s brand brief, while giving
 
 The initial release is deployed directly to [Cloudflare Pages](https://paintcommons.pages.dev). Cloudflare's native GitHub integration could not be created because its GitHub App is not installed/configured for the organization. This project therefore uses the supported Direct Upload + GitHub Actions route.
 
-The workflow in `.github/workflows/deploy.yml` deploys changes to `dist/` on `main` (or a manual workflow run). Until credentials are configured, it reports a warning and skips deployment.
+The workflow in `.github/workflows/deploy.yml` checks the public catalogue **daily at 07:37 UTC** and deploys when its revision differs from the live site's `data/catalogue-version.json`. This picks up merged PRs and automated sync commits without a cross-repository token. GitHub schedules can be delayed; use a manual workflow run when a refresh is needed sooner. Website code changes on `main` and manual runs also rebuild the snapshot and deploy.
+
+Each run checks out the latest website and one immutable catalogue revision, validates the catalogue, bundles the records and full attribution notices, runs the website tests, then uploads to Cloudflare Pages. Unchanged daily runs skip deployment. Runs share one production concurrency group. Missing credentials or invalid data fail visibly; a failed run leaves the previous deployment intact.
+
+New paints receive permanent IDs through the catalogue's Stipplewise sync. If any are still missing, deployment waits and the workflow summary reports how many; the next daily run retries. Never invent IDs or drop pending paints to make a partial snapshot. The catalogue sync runs hourly, so ordinary imports should be ready before the next daily website refresh.
 
 1. Create a Cloudflare API token with **Account → Cloudflare Pages → Edit**, restricted to the hosting account. Follow [Cloudflare's CI guide](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
 2. Add the token as the **CLOUDFLARE_API_TOKEN** [repository Actions secret](https://github.com/paintcommons/website/settings/secrets/actions). Never commit the token or paste it into an issue.
@@ -56,7 +60,7 @@ node scripts/sync-catalog.mjs /path/to/catalog
 node --test scripts/catalogue.test.mjs
 ```
 
-Catalog data carries the repository’s CC0 dedication in `dist/data/LICENSE`; upstream source credits are retained in the JSON and shown in record details.
+Catalog data carries the repository’s CC0 dedication in `dist/data/LICENSE` and source-specific exceptions in `dist/data/THIRD_PARTY_NOTICES.md`. Full source credits are retained in the JSON and shown in record details. The generated `dist/data/catalogue-version.json` identifies the deployed catalogue revision. Scheduled deployments rebuild these files in the runner; they do not create website commits.
 
 ## WWW redirect
 
