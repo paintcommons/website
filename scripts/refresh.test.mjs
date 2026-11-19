@@ -34,12 +34,14 @@ test('refresh preserves attribution, waits for IDs and rejects broken snapshots 
   await writeFile(join(root, 'THIRD_PARTY_NOTICES.md'), 'Full MIT notice');
   git('init'); git('add', '.');
   git('-c', 'user.name=Left47', '-c', 'user.email=8242332+Left47@users.noreply.github.com', 'commit', '-m', 'Test fixture');
+  await writeFile(join(root, 'aliases.json'), '[{"alias_id":"old-id","canonical_id":"paint-1"}]');
   const result = await bundleCatalog(root, output);
   assert.equal(result.ready, true);
   const snapshot = await readFile(join(output, 'catalogue.json'), 'utf8');
   const data = JSON.parse(snapshot);
   assert.deepEqual(data.paints[0].colour.gradient, [null, '#123456', null]);
   assert.deepEqual(data.sources, sources);
+  assert.deepEqual(data.aliases, [{alias_id:'old-id',canonical_id:'paint-1'}]);
   assert.equal(await readFile(join(output, 'THIRD_PARTY_NOTICES.md'), 'utf8'), 'Full MIT notice');
   assert.equal(JSON.parse(await readFile(join(output, 'catalogue-version.json'))).revision, data.revision);
   const { id, ...pending } = paint;
@@ -51,6 +53,9 @@ test('refresh preserves attribution, waits for IDs and rejects broken snapshots 
   await save([{ ...paint, source: 'unknown' }]);
   await assert.rejects(bundleCatalog(root, output), /Unpublished/);
   await save([paint]);
+  await writeFile(join(root, 'aliases.json'), '[{"alias_id":"old-id","canonical_id":"missing"}]');
+  await assert.rejects(bundleCatalog(root, output), /Invalid paint alias/);
+  await writeFile(join(root, 'aliases.json'), '[]');
   await writeFile(join(root, 'equivalents.json'), '[{"paint_a":"paint-1","paint_b":"missing"}]');
   await assert.rejects(bundleCatalog(root, output), /Invalid equivalent/);
   assert.equal(await readFile(join(output, 'catalogue.json'), 'utf8'), snapshot);
