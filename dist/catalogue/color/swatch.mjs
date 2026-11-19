@@ -9,7 +9,7 @@
 // - washes and glazes use the same three stops, blended smoothly with no shine
 // - everything else is flat
 // Generated shading is presentation only; source colour values stay unchanged.
-import {isMetallicPaint,isSpeedpaintPaint} from './categories.mjs';
+import {isMetallicPaint,isSpeedpaintPaint,isWashOrGlaze} from './categories.mjs';
 import {hexToOklab} from './oklch.mjs';
 
 const valid=hex=>typeof hex==='string'&&/^#[\dA-F]{6}$/i.test(hex);
@@ -35,7 +35,7 @@ export function gradientStops(p){
 export function sourceGradient(p){const stops=gradientStops(p).filter(Boolean);return stops.length>1?`linear-gradient(120deg, ${stops.join(', ')})`:null;}
 
 /** Washes and glazes: drawn as a smooth pooled → thinned blend. */
-export const isWashOrGlaze=p=>p?.type==='wash'||/\bwash(es)?\b|\bglaze/i.test(`${p?.range??''} ${p?.name??''}`);
+export {isWashOrGlaze} from './categories.mjs';
 
 /** none | flat | metal | speed | smooth */
 export function swatchKind(p){if(!hexOf(p))return 'none';if(isMetallicPaint(p))return 'metal';if(isSpeedpaintPaint(p))return 'speed';if(isWashOrGlaze(p))return 'smooth';return 'flat';}
