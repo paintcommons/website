@@ -18,11 +18,7 @@ python3 -m http.server 8765 --directory dist
 - Build output directory: `dist`
 - Framework preset: None
 
-To deploy manually with an authorized Cloudflare account:
-
-```sh
-npx wrangler@4.164.0 pages deploy dist --project-name paintcommons --branch main
-```
+Every push to `main` deploys automatically through GitHub Actions after validation and tests. To retry or refresh on demand, use **Run workflow** on `main` in [Deploy website to Cloudflare Pages](https://github.com/paintcommons/website/actions/workflows/deploy.yml). Agents must use this workflow for production; do not upload locally, through the dashboard, or through Sites.
 
 ## Website analytics
 
@@ -51,9 +47,11 @@ The visual identity and wording follow the project’s brand brief, while giving
 
 The initial release is deployed directly to [Cloudflare Pages](https://paintcommons.pages.dev). Cloudflare's native GitHub integration could not be created because its GitHub App is not installed/configured for the organization. This project therefore uses the supported Direct Upload + GitHub Actions route.
 
-The workflow in `.github/workflows/deploy.yml` checks the public catalogue **daily at 07:37 UTC** and deploys when its revision differs from the live site's `data/catalogue-version.json`. This picks up merged PRs and automated sync commits without a cross-repository token. GitHub schedules can be delayed; use a manual workflow run when a refresh is needed sooner. Website code changes on `main` and manual runs also rebuild the snapshot and deploy.
+The workflow in `.github/workflows/deploy.yml` runs on **every push to `main`**, including documentation and configuration changes, and on manual runs selected from `main`. It also checks the public catalogue **daily at 07:37 UTC** and deploys when its revision differs from the live site's `data/catalogue-version.json`. This picks up merged PRs and automated sync commits without a cross-repository token. GitHub schedules can be delayed; use a manual workflow run when a refresh is needed sooner.
 
-Each run checks out the latest website and one immutable catalogue revision, validates the catalogue, bundles the records and full attribution notices, runs the website tests, then uploads to Cloudflare Pages. Unchanged daily runs skip deployment. Runs share one production concurrency group. Missing credentials or invalid data fail visibly; a failed run leaves the previous deployment intact.
+Each run checks out the exact triggering website commit and one immutable catalogue revision, validates the catalogue, bundles the records and full attribution notices, runs the website tests, then uploads to Cloudflare Pages. Unchanged daily runs skip deployment. Runs share one production concurrency group; a website commit superseded by newer `main` skips publication. Missing credentials or invalid data fail visibly before upload. The workflow verifies the deployed `/deployment.json` and records the website commit, catalogue revision and deployment URL in its summary. A verification failure after upload marks the run failed but does not automatically undo the deployment.
+
+Retry transient failures through Actions on the current `main` commit. To undo a release, revert the change on `main` and let the workflow deploy the new commit. Do not retry an old release through local tools. Pull requests run the separate **Test website** workflow without publishing.
 
 New paints receive permanent IDs through the catalogue's Stipplewise sync. If any are still missing, deployment waits and the workflow summary reports how many; the next daily run retries. Never invent IDs or drop pending paints to make a partial snapshot. The catalogue sync runs hourly, so ordinary imports should be ready before the next daily website refresh.
 
@@ -127,7 +125,7 @@ User text is escaped so it can't mention people, link issues or inject HTML. The
 
    The private key can be PKCS#1 or PKCS#8. Delete the downloaded `.pem` afterwards, or keep it only in a password manager.
 5. **Rate limit.** In Cloudflare go to Security → WAF → Rate limiting rules. Add a rule for URI path equals `/api/corrections` and method `POST`: block for 10 seconds when an IP exceeds 3 requests in 10 seconds.
-6. Redeploy: the Deploy workflow, or `npx wrangler@4.164.0 pages deploy dist --project-name paintcommons --branch main` from the repository root, so `functions/` is included.
+6. Redeploy through **Deploy website to Cloudflare Pages** on `main`, so `functions/` is included. Keep runtime secret provisioning separate from deploying the website; agents must not upload a local build.
 
 ### Local testing
 

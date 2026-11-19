@@ -3,13 +3,6 @@ name: Deploy website to Cloudflare Pages
 on:
   push:
     branches: [main]
-    paths:
-      - 'dist/**'
-      - 'functions/**'
-      - 'scripts/**'
-      - 'package.json'
-      - 'wrangler.jsonc'
-      - '.github/workflows/deploy.yml'
   schedule:
     - cron: '37 7 * * *'
   workflow_dispatch:
@@ -23,15 +16,16 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       deployments: write
     steps:
-      - name: Check out latest website
+      - name: Check out the triggering website revision
         uses: actions/checkout@v6
         with:
-          ref: main
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -67,12 +61,53 @@ jobs:
             echo '::error::Cloudflare deployment credentials are missing.'
             exit 1
           fi
-      - name: Deploy production website
+      - name: Check production revision
         if: steps.bundle.outputs.ready == 'true'
+        id: revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')
+          if [ "$latest" = "$GITHUB_SHA" ]; then
+            echo 'current=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'current=false' >> "$GITHUB_OUTPUT"
+            echo 'Superseded by a newer main commit; this run will not deploy.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Record release revisions
+        if: steps.revision.outputs.current == 'true'
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, writeFileSync } from "node:fs";
+            const catalogue = JSON.parse(readFileSync("dist/data/catalogue-version.json", "utf8"));
+            writeFileSync("dist/deployment.json", JSON.stringify({commit:process.env.GITHUB_SHA,catalogueRevision:catalogue.revision}) + "\n");
+          '
+      - name: Deploy production website
+        if: steps.revision.outputs.current == 'true'
+        id: deploy
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: '4.164.0'
-          command: pages deploy dist --project-name paintcommons --branch main
+          command: pages deploy dist --project-name paintcommons --branch main --commit-hash=${{ github.sha }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify the deployed revisions
+        if: steps.revision.outputs.current == 'true'
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          curl --fail --retry 5 --retry-all-errors --retry-delay 5 --max-time 30 \
+            "$DEPLOYMENT_URL/deployment.json" -o "$RUNNER_TEMP/deployment.json"
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const actual = JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/deployment.json", "utf8"));
+            const expected = JSON.parse(readFileSync("dist/data/catalogue-version.json", "utf8"));
+            if (actual.commit !== process.env.GITHUB_SHA || actual.catalogueRevision !== expected.revision) throw Error("Deployed revisions do not match this run");
+          '
+          {
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo "Catalogue: \`$(git -C .catalog rev-parse HEAD)\`"
+            echo "Deployment: $DEPLOYMENT_URL"
+            echo 'Production: https://paintcommons.org'
+          } >> "$GITHUB_STEP_SUMMARY"
