@@ -34,6 +34,6 @@
     }
   },
   "scripts": {
-    "test": "node --test scripts/catalogue.test.mjs"
+    "test": "node --test scripts/*.test.mjs"
   }
 }

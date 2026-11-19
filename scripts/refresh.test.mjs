@@ -1,0 +1,57 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { bundleCatalog } from './sync-catalog.mjs';
+import { needsRefresh } from './check-refresh.mjs';
+
+test('daily refresh skips current data and retries missing or unreachable manifests', async () => {
+  const revision = 'a'.repeat(40);
+  const response = value => async () => ({ ok: true, json: async () => value });
+  assert.equal(await needsRefresh(revision, { fetcher: response({ revision }) }), false);
+  assert.equal(await needsRefresh(revision, { fetcher: response({ revision: 'b'.repeat(40) }) }), true);
+  assert.equal(await needsRefresh(revision, { fetcher: async () => ({ ok: false }) }), true);
+  assert.equal(await needsRefresh(revision, { fetcher: async () => { throw Error('offline'); } }), true);
+  await assert.rejects(needsRefresh('not-a-revision'), /Invalid/);
+});
+
+test('refresh preserves attribution, waits for IDs and rejects broken snapshots before replacing data', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'paintcommons-refresh-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const output = join(root, 'output');
+  const git = (...args) => execFileSync('git', ['-C', root, ...args], { stdio: 'pipe' });
+  await mkdir(join(root, 'paints', 'brand'), { recursive: true });
+  const paint = { id: 'paint-1', name: 'Blue', brand: 'Brand', source: 'mit', colour: { hex: '#123456', source: 'mit', gradient: [null, '#123456', null] } };
+  const range = join(root, 'paints', 'brand', 'range.json');
+  const save = data => writeFile(range, JSON.stringify(data));
+  await save([paint]);
+  const sources = { colour_sources: [{ id: 'mit', status: 'published', licence: 'MIT', attribution: 'Rick Fleuren / Miniature Painter Pro', notice: 'THIRD_PARTY_NOTICES.md' }] };
+  await writeFile(join(root, 'sources.json'), JSON.stringify(sources));
+  await writeFile(join(root, 'equivalents.json'), '[]');
+  await writeFile(join(root, 'LICENSE'), 'CC0');
+  await writeFile(join(root, 'THIRD_PARTY_NOTICES.md'), 'Full MIT notice');
+  git('init'); git('add', '.');
+  git('-c', 'user.name=Left47', '-c', 'user.email=8242332+Left47@users.noreply.github.com', 'commit', '-m', 'Test fixture');
+  const result = await bundleCatalog(root, output);
+  assert.equal(result.ready, true);
+  const snapshot = await readFile(join(output, 'catalogue.json'), 'utf8');
+  const data = JSON.parse(snapshot);
+  assert.deepEqual(data.paints[0].colour.gradient, [null, '#123456', null]);
+  assert.deepEqual(data.sources, sources);
+  assert.equal(await readFile(join(output, 'THIRD_PARTY_NOTICES.md'), 'utf8'), 'Full MIT notice');
+  assert.equal(JSON.parse(await readFile(join(output, 'catalogue-version.json'))).revision, data.revision);
+  const { id, ...pending } = paint;
+  await save([paint, pending]);
+  assert.equal((await bundleCatalog(root, output, { waitForIds: true })).ready, false);
+  await assert.rejects(bundleCatalog(root, output), /Missing/);
+  await save([paint, paint]);
+  await assert.rejects(bundleCatalog(root, output), /Duplicate/);
+  await save([{ ...paint, source: 'unknown' }]);
+  await assert.rejects(bundleCatalog(root, output), /Unpublished/);
+  await save([paint]);
+  await writeFile(join(root, 'equivalents.json'), '[{"paint_a":"paint-1","paint_b":"missing"}]');
+  await assert.rejects(bundleCatalog(root, output), /Invalid equivalent/);
+  assert.equal(await readFile(join(output, 'catalogue.json'), 'utf8'), snapshot);
+});
