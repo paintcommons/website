@@ -125,3 +125,5 @@ CORRECTIONS_DRY_RUN=1
 Then run `npx wrangler@4.164.0 pages dev dist` and open `/catalogue/`. Dry-run mode returns the issue it would create instead of calling GitHub.
 
 Duplicate paint IDs from the canonical catalogue are retained in the snapshot’s `aliases` list. Old record URLs resolve to the canonical paint, including its current code, swatch and correction form. Alias IDs are never counted as extra paints.
+
+Wash and glaze names use the same shared predicate for section grouping and smooth swatch rendering. Wash/glaze mediums remain flat auxiliary products in Effects; names such as Washed Out Blue remain ordinary acrylics. Published paint types, colours and gradients are unchanged.

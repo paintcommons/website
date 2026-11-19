@@ -28,7 +28,7 @@ test('similar colours combine across brands but keep finish, family and missing 
 test('colour grouping compares with the lead and does not form a transitive chain',async()=>{const {combineLikeColours}=await import('../dist/catalogue/wall.mjs');const paints=['#808080','#878787','#8E8E8E'].map((hex,i)=>({id:String(i),name:'Grey',brand:String(i),range:'Test',type:'acrylic',colour:{hex}}));const grouped=combineLikeColours(paints);assert.deepEqual(grouped.map(c=>c.paints.length),[2,1]);});
 
 
-test('shared grouping separates metallic airbrush ranges from airbrush colours',async()=>{const {categoryOf,categoryLabel,GROUPING_VERSION}=await import('../dist/catalogue/color/categories.mjs');assert.equal(GROUPING_VERSION,'1.0.0');for(const range of ['Air','Model Air','Game Air','True Metallic Metal Airbrush'])assert.equal(categoryOf({type:'metallic',range}),'airbrush-metallic',range);assert.equal(categoryOf({type:'acrylic',range:'Model Air'}),'airbrush');assert.equal(categoryOf({type:'metallic',range:'Metal Color'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'True Metallic Metal Base'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'Contrast'}),'speedpaint');assert.equal(categoryOf({type:'wash',range:'Game Wash'}),'wash');assert.equal(categoryLabel('airbrush'),'Airbrush colors');assert.equal(categoryLabel('airbrush','uk'),'Airbrush colours');});
+test('shared grouping separates metallic airbrush ranges from airbrush colours',async()=>{const {categoryOf,categoryLabel,GROUPING_VERSION}=await import('../dist/catalogue/color/categories.mjs');assert.equal(GROUPING_VERSION,'1.0.1');for(const range of ['Air','Model Air','Game Air','True Metallic Metal Airbrush'])assert.equal(categoryOf({type:'metallic',range}),'airbrush-metallic',range);assert.equal(categoryOf({type:'acrylic',range:'Model Air'}),'airbrush');assert.equal(categoryOf({type:'metallic',range:'Metal Color'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'True Metallic Metal Base'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'Contrast'}),'speedpaint');assert.equal(categoryOf({type:'wash',range:'Game Wash'}),'wash');assert.equal(categoryLabel('airbrush'),'Airbrush colors');assert.equal(categoryLabel('airbrush','uk'),'Airbrush colours');});
 test('airbrush metallic wall groups contain no ordinary airbrush paints',async()=>{const {categoryOf,isAirbrushPaint,isMetallicPaint}=await import('../dist/catalogue/color/categories.mjs');const metals=data.paints.filter(p=>isAirbrushPaint(p)&&isMetallicPaint(p)&&!(/fluo/i.test(p.range||'')||/fluorescent/i.test(p.name)));assert.ok(metals.length>=22);for(const p of metals)assert.equal(categoryOf(p),'airbrush-metallic',p.name);for(const p of data.paints.filter(p=>categoryOf(p)==='airbrush'))assert.equal(isMetallicPaint(p),false,p.name);});
 
 
@@ -131,4 +131,17 @@ test('stored stops drive the finish: metallic sweeps, speedpaint and wash positi
  assert.ok(isWashOrGlaze({type:'acrylic',range:'Glaze',name:'Lamenters Yellow'}));
  assert.ok(!isWashOrGlaze({type:'acrylic',range:'Model Color',name:'Washed Out Blue'}));
  for(const p of data.paints.filter(p=>p.type==='wash'&&p.colour))assert.notEqual(swatchKind(p),'flat',p.name+' (metallic washes such as Gemstone keep their shine)');
+});
+
+
+test('wash and glaze names share grouping and rendering, while mediums stay flat',async()=>{
+ const {categoryOf,categoryLabel}=await import('../dist/catalogue/color/categories.mjs');
+ const {swatchKind}=await import('../dist/catalogue/color/swatch.mjs');
+ const paint=name=>({name,brand:'Vallejo',range:'Model Color',type:'acrylic',colour:{hex:'#C0C0C0'}});
+ for(const name of ['White Glaze','Tan Glaze','Super Wash Green']){const p=paint(name);assert.equal(categoryOf(p),'wash',name);assert.equal(swatchKind(p),'smooth',name);}
+ for(const name of ['Glaze Medium','Glaze Medium -90-','Wash Medium']){const p=paint(name);assert.equal(categoryOf(p),'effect',name);assert.equal(swatchKind(p),'flat',name);}
+ assert.equal(categoryOf(paint('Washed Out Blue')),'acrylic');assert.equal(swatchKind(paint('Washed Out Blue')),'flat');
+ assert.equal(categoryOf({type:'acrylic',range:'Glazing paints',name:'Blue'}),'wash');
+ assert.equal(categoryLabel('wash'),'Wash, ink & glaze');
+ for(const p of data.paints.filter(p=>categoryOf(p)==='acrylic'))assert.ok(['flat','none'].includes(swatchKind(p)),p.brand+' '+p.name);
 });
