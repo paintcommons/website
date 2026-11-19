@@ -24,6 +24,23 @@ To deploy manually with an authorized Cloudflare account:
 npx wrangler@4.164.0 pages deploy dist --project-name paintcommons --branch main
 ```
 
+## Website analytics
+
+The public Google container is `GTM-MNJQ6CND`. `dist/analytics.js` loads it once
+only on `https://paintcommons.org`; localhost and Cloudflare preview domains are
+excluded. The home, catalogue, and privacy pages include the loader. Page URLs
+omit query parameters and fragments, referrers retain only their origin, and
+campaign tags accept only letters, numbers, underscores, and hyphens. No search
+terms, selected paint IDs, or correction form contents are passed as event fields.
+Google signals and advertising personalisation are disabled by the loader.
+
+Google container settings control automatic events; keep enhanced measurement
+off while validating traffic tracking. Test installation in the Paint Commons
+GA4 property and confirm a visit in Realtime. The catalogue's filter updates do
+not have custom page-view events. The footer link to Stipplewise uses
+`utm_source=paintcommons&utm_medium=referral`. `/privacy/` describes analytics
+and the site's providers. Tests cover production-only loading and URL sanitation.
+
 ## Content
 
 Contributions through pull requests, APIs, and Stipplewise are described as a planned workflow. Only explicitly submitted and approved information belongs in the public catalog. Published catalog data is CC0. The catalogue's correction form is the only submission route on the site (see below).
