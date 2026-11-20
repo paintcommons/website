@@ -75,7 +75,7 @@ node scripts/sync-catalog.mjs /path/to/catalog
 node --test scripts/catalogue.test.mjs
 ```
 
-Catalog data carries the repository’s CC0 dedication in `dist/data/LICENSE` and source-specific exceptions in `dist/data/THIRD_PARTY_NOTICES.md`. Full source credits are retained in the JSON and shown in record details. The generated `dist/data/catalogue-version.json` identifies the deployed catalogue revision. Scheduled deployments rebuild these files in the runner; they do not create website commits.
+The website’s code is under the [MIT licence](LICENSE). Catalog data carries the repository’s CC0 dedication in `dist/data/LICENSE` and source-specific exceptions in `dist/data/THIRD_PARTY_NOTICES.md`. Full source credits are retained in the JSON and shown in record details. The generated `dist/data/catalogue-version.json` identifies the deployed catalogue revision. Scheduled deployments rebuild these files in the runner; they do not create website commits.
 
 ## WWW redirect
 
