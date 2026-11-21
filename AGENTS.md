@@ -7,7 +7,7 @@ Read `README.md`, `COPY_STYLE.md`, `package.json`, and the relevant tests before
 - Inspect `git status`, `git worktree list`, and branch history before starting. Use your own worktree and topic branch from `main` (Codex branches use `codex/<topic>`). Do not edit another contributor's checkout or absorb unfinished branches.
 - Coordinate overlapping files with Jim. This repo has no `npm run wip`; check the Stipplewise WIP board too when a task spans both repos on Jim's Mac.
 - Keep one topic per branch and commit plain, descriptive messages. Agents working for Jim use his configured human identity; human contributors use their own. Never add agent authors, co-authors, signatures, or generation credits, and never bypass attribution hooks/checks.
-- Use the Codex in-app browser for browser interactions unless Jim explicitly requests an exception.
+- When working for Jim, use your in-app browser for browser interactions unless he asks for an exception (his preference, not a rule for every contributor).
 
 ## Implementation rules
 
