@@ -1,6 +1,6 @@
 # Paint Commons website
 
-The website and browsable catalogue for **paintcommons.org**, an open, living miniature paint reference maintained by the community. This website is separate from the [catalog](https://github.com/paintcommons/catalog) and the Stipplewise app.
+The website and browsable catalogue for **paintcommons.org**, the open miniature paint reference, maintained by the community. This website is separate from the [catalog](https://github.com/paintcommons/catalog) and the Stipplewise app.
 
 ## What's on the site
 
@@ -16,7 +16,7 @@ Catalog pull requests and reviewed Stipplewise corrections feed the public catal
 
 The website's code is under the [MIT licence](LICENSE). Catalog data uses CC0 with source-specific exceptions and notices; see the [catalog licence and provenance rules](https://github.com/paintcommons/catalog#licence). Shared code in `dist/catalogue/color/` is MIT. Preserve upstream notices and do not transfer proprietary Stipplewise code here without explicit authorization.
 
-The visual identity is documented in [STYLE_GUIDE.md](STYLE_GUIDE.md) and the wording in [COPY_STYLE.md](COPY_STYLE.md).
+The identity, voice, and visual style are documented in [STYLE_GUIDE.md](STYLE_GUIDE.md).
 
 ## Contributing
 
@@ -30,7 +30,7 @@ Everything below covers working on the site: setup, checks, how the catalogue an
 
 ### Development
 
-Read [AGENTS.md](AGENTS.md), [COPY_STYLE.md](COPY_STYLE.md), and [STYLE_GUIDE.md](STYLE_GUIDE.md) before changing the site. Use a feature branch or separate worktree and open a pull request for review.
+Read [AGENTS.md](AGENTS.md) and [STYLE_GUIDE.md](STYLE_GUIDE.md) before changing the site. Use a feature branch or separate worktree and open a pull request for review.
 
 The website uses plain HTML, CSS, and JavaScript modules. `dist/` is checked-in source, not disposable build output. There is no application dependency installation or frontend compilation step. Production deployments rebuild the bundled data from the public catalogue. Use Node.js 22 for tests and Python 3 for a static preview:
 
@@ -58,7 +58,7 @@ python3 -m http.server 8765 --directory dist
 | `scripts/sync-catalog.mjs` | Rebuilds the bundled snapshot from a committed catalog checkout |
 | `wrangler.jsonc` | Public Pages configuration; secrets remain outside Git |
 
-Before review, run `npm test` and `python3 -m unittest discover -s scripts/attribution -p 'test_*.py'` and preview the affected page at phone and desktop widths in a browser (agents working for Jim use their in-app browser). Check search/filters, paint details, wall grouping, and missing-colour behavior when those areas change. Test correction requests only in dry-run mode. Use [COPY_STYLE.md](COPY_STYLE.md) for British spelling and factual labels.
+Before review, run `npm test` and `python3 -m unittest discover -s scripts/attribution -p 'test_*.py'` and preview the affected page at phone and desktop widths in a browser (agents working for Jim use their in-app browser). Check search/filters, paint details, wall grouping, and missing-colour behavior when those areas change. Test correction requests only in dry-run mode. Use [STYLE_GUIDE.md](STYLE_GUIDE.md) for British spelling and factual labels.
 
 Keep changes to the shared package coordinated with Stipplewise's immutable dependency pin and lockfile; test both consumers for a shared-rule release. A website deployment alone does not update the app's installed package.
 
