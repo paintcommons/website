@@ -20,7 +20,26 @@ Read `README.md`, `COPY_STYLE.md`, `package.json`, and the relevant tests before
 
 ## Checks and live services
 
-- Run `npm test` before review. Preview affected pages at phone and desktop widths. A static server does not run Pages Functions; use the README's local Wrangler setup for those.
+- Run `npm test` and `python3 -m unittest discover -s scripts/attribution -p 'test_*.py'` before review. Preview affected pages at phone and desktop widths. A static server does not run Pages Functions; use the README's local Wrangler setup for those.
 - Use `CORRECTIONS_DRY_RUN=1` and Turnstile test keys for local correction tests. Never file live correction issues as test data. Keep `.dev.vars`, private keys, tokens, and sender information out of Git and chat.
-- Routine production releases use **Deploy website to Cloudflare Pages** after authorized changes to `main`. The workflow has path filters and currently does not run tests. Run checks locally and monitor the release result.
+- Routine production releases use **Deploy website to Cloudflare Pages** after authorized changes to `main`. Every push runs attribution checks, catalogue validation/bundling, and website tests before deployment. Run checks locally and monitor the release result.
 - Ask Jim before pushing `main` unless the task already authorizes publication. Secret provisioning, GitHub App installation, Turnstile, rate limits, and DNS are separate infrastructure tasks requiring authorization.
+
+## Production deployment
+
+- Every push to `main` automatically runs **Deploy website to Cloudflare Pages** in GitHub Actions. The workflow validates and bundles the public catalogue, runs the website tests, and deploys the triggering website revision and Pages Functions to the existing `paintcommons` project.
+- Deploy only through GitHub Actions. Do not run local Wrangler uploads, use dashboard uploads, or deploy through Sites or another service. Legacy commands in old notes are not permission to use them.
+- After an authorized push or merge, monitor the workflow and report its result and URL. If it fails, fix or retry the workflow; do not fall back to a local deployment. Manual **Run workflow** requests must select `main`.
+- Daily catalogue refreshes also run through this workflow. Keep its validation, attribution, permanent-ID checks and production concurrency group intact. Never drop paints or invent IDs to force a deployment.
+- The workflow summary and `/deployment.json` identify the website commit and bundled catalogue revision. A run superseded by newer `main` skips publication. To undo a release, revert the change on `main` and let Actions publish it.
+- Keep credentials out of chat and git. Deployment credentials belong in GitHub Actions secrets; runtime secrets stay in Cloudflare. Ask the user to enter new credentials directly in the relevant settings.
+
+## Development
+
+Run `npm test` before merging. Local static serving, catalogue bundling and `wrangler pages dev` are available for development. Read `README.md` for setup and the canonical shared paint-grouping package contract with Stipplewise.
+
+## Commit and pull request attribution
+
+Use the configured human Git identity. Never add coding-agent authors, co-authors,
+signatures or generation/assistance credits to commits or pull requests. Do not
+bypass attribution hooks or required checks. See `ATTRIBUTION.md`.

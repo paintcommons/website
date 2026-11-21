@@ -8,7 +8,7 @@ test('combined search and filters work on published records',()=>{const result=f
 test('barcode and product code searches locate their records',()=>{for(const p of [data.paints.find(p=>p.barcodes.length),data.paints.find(p=>p.code)]){const q=p.code||p.barcodes[0].ean;assert.ok(filterPaints(data.paints,{...defaults,q}).some(r=>r.id===p.id));}const p=data.paints.find(p=>p.barcodes.length);assert.ok(filterPaints(data.paints,{...defaults,q:p.barcodes[0].ean}).some(r=>r.id===p.id));});
 test('impossible filter combinations return no results',()=>{assert.equal(filterPaints(data.paints,{...defaults,brand:'Citadel',range:'Model Color'}).length,0);});
 test('all bundled swatches have published evidence and all equivalent endpoints exist',()=>{const ids=new Set(data.paints.map(p=>p.id));assert.equal(ids.size,data.paints.length);for(const p of data.paints){if(p.colour)assert.ok(data.sources.colour_sources.some(s=>s.id===p.colour.source&&s.status==='published'));}for(const e of data.equivalents){assert.ok(ids.has(e.paint_a));assert.ok(ids.has(e.paint_b));}});
-test('missing swatches stay missing and source gradients are retained as evidence',async()=>{const {sourceGradient}=await import('../dist/catalogue/swatch.mjs');assert.equal(swatchBackground({}),null);const p=data.paints.find(p=>p.colour?.gradient?.length>1);for(const stop of p.colour.gradient)assert.ok(sourceGradient(p).includes(stop));});
+test('missing swatches stay missing and source gradients are retained as evidence',async()=>{const {sourceGradient}=await import('../dist/catalogue/swatch.mjs');assert.equal(swatchBackground({}),null);const p=data.paints.find(p=>p.colour?.gradient?.length>1);for(const stop of p.colour.gradient.filter(Boolean))assert.ok(sourceGradient(p).includes(stop));});
 
 test('live refresh pins raw records to the commit rather than the tree SHA',async()=>{const {latestCatalog}=await import('../dist/catalogue/data.mjs');const commit='a'.repeat(40),tree='b'.repeat(40),calls=[];const sample={...data.paints[0]};const payloads=new Map([
  ['https://api.github.com/repos/paintcommons/catalog/commits/main',{sha:commit,commit:{tree:{sha:tree},committer:{date:'2026-11-18T00:00:00Z'}}}],
@@ -22,13 +22,13 @@ test('colour wall keeps every paint distinct and every ramp dark to light',async
 test('range grouping is by manufacturer and range, with colour order retained',async()=>{const {sectionsOf,colourCompare}=await import('../dist/catalogue/wall.mjs');const groups=sectionsOf([...data.paints].sort(colourCompare),'range');for(const group of groups){assert.ok(group.paints.every(p=>`${p.brand} · ${p.range||'Other'}`===group.label));for(let i=1;i<group.paints.length;i++)assert.ok(colourCompare(group.paints[i-1],group.paints[i])<=0);}});
 
 
-test('every metallic gets a sheen, including airbrush metallics without source gradients',async()=>{const {swatchKind}=await import('../dist/catalogue/swatch.mjs');for(const p of data.paints.filter(p=>p.type==='metallic')){assert.equal(swatchKind(p),'metal',p.name);assert.match(swatchBackground(p),/^linear-gradient\(45deg/);assert.ok(swatchBackground(p).includes('#FFFFFF 100%'));}});
+test('every metallic gets a sheen, including airbrush metallics without source gradients',async()=>{const {swatchKind}=await import('../dist/catalogue/swatch.mjs');for(const p of data.paints.filter(p=>p.type==='metallic')){assert.equal(swatchKind(p),'metal',p.name);assert.match(swatchBackground(p),/^linear-gradient\(45deg/);const {swatchStops,METAL_LIGHT_END}=await import('../dist/catalogue/swatch.mjs');const {hexToOklab}=await import('../dist/catalogue/color/oklch.mjs');assert.ok(hexToOklab(swatchStops(p)[3]).L>=METAL_LIGHT_END,p.name+' ends very light');}});
 test('all speedpaint and contrast-style swatches use three hard bands',async()=>{const {categoryOf}=await import('../dist/catalogue/color/categories.mjs');for(const p of data.paints.filter(p=>categoryOf(p)==='speedpaint'&&p.type!=='metallic')){const bg=swatchBackground(p);assert.match(bg,/0 33\.4%/);assert.match(bg,/33\.4% 66\.7%/);assert.match(bg,/66\.7% 100%/);assert.ok(bg.includes(p.colour.hex));}});
 test('similar colours combine across brands but keep finish, family and missing colours distinct',async()=>{const {combineLikeColours}=await import('../dist/catalogue/wall.mjs');const p=(id,brand,hex,type='acrylic')=>({id,brand,name:id,range:'Test',type,colour:hex?{hex}:undefined});const paints=[p('a','A','#808080'),p('b','B','#808080'),p('c','A','#808080'),p('d','C','#808080','metallic'),p('e','D','#0000FF'),p('f','E',null),p('g','F',null)];const combined=combineLikeColours(paints);assert.equal(combined.length,6);assert.deepEqual(combined[0].paints.map(p=>p.id),['a','b']);assert.equal(combined.flatMap(c=>c.paints).length,paints.length);assert.equal(combineLikeColours(paints,false).length,paints.length);});
 test('colour grouping compares with the lead and does not form a transitive chain',async()=>{const {combineLikeColours}=await import('../dist/catalogue/wall.mjs');const paints=['#808080','#878787','#8E8E8E'].map((hex,i)=>({id:String(i),name:'Grey',brand:String(i),range:'Test',type:'acrylic',colour:{hex}}));const grouped=combineLikeColours(paints);assert.deepEqual(grouped.map(c=>c.paints.length),[2,1]);});
 
 
-test('shared grouping separates metallic airbrush ranges from airbrush colours',async()=>{const {categoryOf,categoryLabel,GROUPING_VERSION}=await import('../dist/catalogue/color/categories.mjs');assert.equal(GROUPING_VERSION,'1.0.0');for(const range of ['Air','Model Air','Game Air','True Metallic Metal Airbrush'])assert.equal(categoryOf({type:'metallic',range}),'airbrush-metallic',range);assert.equal(categoryOf({type:'acrylic',range:'Model Air'}),'airbrush');assert.equal(categoryOf({type:'metallic',range:'Metal Color'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'True Metallic Metal Base'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'Contrast'}),'speedpaint');assert.equal(categoryOf({type:'wash',range:'Game Wash'}),'wash');assert.equal(categoryLabel('airbrush'),'Airbrush colors');assert.equal(categoryLabel('airbrush','uk'),'Airbrush colours');});
+test('shared grouping separates metallic airbrush ranges from airbrush colours',async()=>{const {categoryOf,categoryLabel,GROUPING_VERSION}=await import('../dist/catalogue/color/categories.mjs');assert.equal(GROUPING_VERSION,'1.0.1');for(const range of ['Air','Model Air','Game Air','True Metallic Metal Airbrush'])assert.equal(categoryOf({type:'metallic',range}),'airbrush-metallic',range);assert.equal(categoryOf({type:'acrylic',range:'Model Air'}),'airbrush');assert.equal(categoryOf({type:'metallic',range:'Metal Color'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'True Metallic Metal Base'}),'metallic');assert.equal(categoryOf({type:'acrylic',range:'Contrast'}),'speedpaint');assert.equal(categoryOf({type:'wash',range:'Game Wash'}),'wash');assert.equal(categoryLabel('airbrush'),'Airbrush colors');assert.equal(categoryLabel('airbrush','uk'),'Airbrush colours');});
 test('airbrush metallic wall groups contain no ordinary airbrush paints',async()=>{const {categoryOf,isAirbrushPaint,isMetallicPaint}=await import('../dist/catalogue/color/categories.mjs');const metals=data.paints.filter(p=>isAirbrushPaint(p)&&isMetallicPaint(p)&&!(/fluo/i.test(p.range||'')||/fluorescent/i.test(p.name)));assert.ok(metals.length>=22);for(const p of metals)assert.equal(categoryOf(p),'airbrush-metallic',p.name);for(const p of data.paints.filter(p=>categoryOf(p)==='airbrush'))assert.equal(isMetallicPaint(p),false,p.name);});
 
 
@@ -114,4 +114,34 @@ test('fantasy creature hides follow their swatch rather than the leather rule',a
  assert.equal(isWoodOrLeather('#362C2A','Rhinox Hide'),true);
  assert.equal(rampOf('#362C2A','Rhinox Hide'),'brown');
  assert.equal(isWoodOrLeather('#6E4A33','Leather Brown'),true);
+});
+
+test('stored stops drive the finish: metallic sweeps, speedpaint and wash positions, nulls generated',async()=>{
+ const {swatchKind,swatchStops,sourceGradient,isWashOrGlaze}=await import('../dist/catalogue/swatch.mjs');
+ const paint=(type,range,name,hex,gradient=null)=>({type,range,name,colour:{hex,gradient,source:'x'}});
+ const sweep=paint('metallic','Metal Color','Aluminium','#8B8B91',['#8B8B91','#A0A0A5','#C3C3C6','#CCCCCF','#B1B1B5','#9F9FA4','#939399']);
+ assert.deepEqual(swatchStops(sweep).slice(0,3),['#8B8B91','#8B8B91','#CCCCCF']);
+ assert.equal(swatchStops(sweep)[3],'#F4F4F2','a near-white end when the source has none');
+ assert.deepEqual(swatchStops(paint('speedpaint','Pro Acryl 1-Step','Blue','#086CB1',['#0E447E','#086CB1','#0393D7'])),['#0E447E','#086CB1','#0393D7']);
+ assert.deepEqual(swatchStops(paint('speedpaint','Contrast','Creed Camo','#B7CE9A',['#145D2E','#B7CE9A'])).slice(0,2),['#145D2E','#B7CE9A']);
+ const wash=paint('wash','Pro Acryl','Black Wash','#080605',[null,'#080605','#838282']);
+ assert.equal(swatchKind(wash),'smooth');
+ assert.deepEqual(swatchStops(wash).slice(1),['#080605','#838282']);
+ assert.equal(sourceGradient(wash),'linear-gradient(120deg, #080605, #838282)','the evidence strip skips empty positions');
+ assert.ok(isWashOrGlaze({type:'acrylic',range:'Glaze',name:'Lamenters Yellow'}));
+ assert.ok(!isWashOrGlaze({type:'acrylic',range:'Model Color',name:'Washed Out Blue'}));
+ for(const p of data.paints.filter(p=>p.type==='wash'&&p.colour))assert.notEqual(swatchKind(p),'flat',p.name+' (metallic washes such as Gemstone keep their shine)');
+});
+
+
+test('wash and glaze names share grouping and rendering, while mediums stay flat',async()=>{
+ const {categoryOf,categoryLabel}=await import('../dist/catalogue/color/categories.mjs');
+ const {swatchKind}=await import('../dist/catalogue/color/swatch.mjs');
+ const paint=name=>({name,brand:'Vallejo',range:'Model Color',type:'acrylic',colour:{hex:'#C0C0C0'}});
+ for(const name of ['White Glaze','Tan Glaze','Super Wash Green']){const p=paint(name);assert.equal(categoryOf(p),'wash',name);assert.equal(swatchKind(p),'smooth',name);}
+ for(const name of ['Glaze Medium','Glaze Medium -90-','Wash Medium']){const p=paint(name);assert.equal(categoryOf(p),'effect',name);assert.equal(swatchKind(p),'flat',name);}
+ assert.equal(categoryOf(paint('Washed Out Blue')),'acrylic');assert.equal(swatchKind(paint('Washed Out Blue')),'flat');
+ assert.equal(categoryOf({type:'acrylic',range:'Glazing paints',name:'Blue'}),'wash');
+ assert.equal(categoryLabel('wash'),'Wash, ink & glaze');
+ for(const p of data.paints.filter(p=>categoryOf(p)==='acrylic'))assert.ok(['flat','none'].includes(swatchKind(p)),p.brand+' '+p.name);
 });

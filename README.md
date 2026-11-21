@@ -6,7 +6,7 @@ The website and browsable catalogue for **paintcommons.org**, an open, living mi
 
 Read [AGENTS.md](AGENTS.md) and [COPY_STYLE.md](COPY_STYLE.md) before changing the site. Use a feature branch or separate worktree and open a pull request for review. Work on public paint records belongs in [paintcommons/catalog](https://github.com/paintcommons/catalog); changes to the app belong in [Stipplewise](https://github.com/Left47/stipplewise).
 
-The website uses plain HTML, CSS, and JavaScript modules. `dist/` is checked-in source, not disposable build output. There is no bundling step or application dependency installation. Use Node.js 22 for tests and Python 3 for a static preview:
+The website uses plain HTML, CSS, and JavaScript modules. `dist/` is checked-in source, not disposable build output. There is no application dependency installation or frontend compilation step. Production deployments rebuild the bundled data from the public catalogue. Use Node.js 22 for tests and Python 3 for a static preview:
 
 ```sh
 npm test
@@ -26,7 +26,24 @@ python3 -m http.server 8765 --directory dist
 - Build output directory: `dist`
 - Framework preset: None
 
-Routine production releases use **Deploy website to Cloudflare Pages** in GitHub Actions. Changes under `dist/`, `functions/`, `wrangler.jsonc`, or the deploy workflow trigger it on `main`; documentation-only commits do not. Obtain Jim's authorization before publishing to `main` or changing live service configuration. Monitor the workflow after a release. The workflow currently deploys without running the test suite, so run `npm test` before review.
+Every push to `main` deploys automatically through GitHub Actions after validation and tests. To retry or refresh on demand, use **Run workflow** on `main` in [Deploy website to Cloudflare Pages](https://github.com/paintcommons/website/actions/workflows/deploy.yml). Agents must use this workflow for production; do not upload locally, through the dashboard, or through Sites.
+
+## Website analytics
+
+The public Google container is `GTM-MNJQ6CND`. `dist/analytics.js` loads it once
+only on `https://paintcommons.org`; localhost and Cloudflare preview domains are
+excluded. The home, catalogue, and privacy pages include the loader. Page URLs
+omit query parameters and fragments, referrers retain only their origin, and
+campaign tags accept only letters, numbers, underscores, and hyphens. No search
+terms, selected paint IDs, or correction form contents are passed as event fields.
+Google signals and advertising personalisation are disabled by the loader.
+
+Google container settings control automatic events; keep enhanced measurement
+off while validating traffic tracking. Test installation in the Paint Commons
+GA4 property and confirm a visit in Realtime. The catalogue's filter updates do
+not have custom page-view events. The footer link to Stipplewise uses
+`utm_source=paintcommons&utm_medium=referral`. `/privacy/` describes analytics
+and the site's providers. Tests cover production-only loading and URL sanitation.
 
 ## Content
 
@@ -40,7 +57,13 @@ The visual identity and wording follow the project’s brand brief, while giving
 
 The initial release is deployed directly to [Cloudflare Pages](https://paintcommons.pages.dev). Cloudflare's native GitHub integration could not be created because its GitHub App is not installed/configured for the organization. This project therefore uses the supported Direct Upload + GitHub Actions route.
 
-The workflow in `.github/workflows/deploy.yml` deploys matching site, function, configuration, or workflow changes on `main` (or a manual workflow run). Until credentials are configured, it reports a warning and skips deployment.
+The workflow in `.github/workflows/deploy.yml` runs on **every push to `main`**, including documentation and configuration changes, and on manual runs selected from `main`. It also checks the public catalogue **daily at 07:37 UTC** and deploys when its revision differs from the live site's `data/catalogue-version.json`. This picks up merged PRs and automated sync commits without a cross-repository token. GitHub schedules can be delayed; use a manual workflow run when a refresh is needed sooner.
+
+Each run checks out the exact triggering website commit and one immutable catalogue revision, validates the catalogue, bundles the records and full attribution notices, runs the website tests, then uploads to Cloudflare Pages. Unchanged daily runs skip deployment. Runs share one production concurrency group; a website commit superseded by newer `main` skips publication. Missing credentials or invalid data fail visibly before upload. The workflow verifies the deployed `/deployment.json` and records the website commit, catalogue revision and deployment URL in its summary. A verification failure after upload marks the run failed but does not automatically undo the deployment.
+
+Retry transient failures through Actions on the current `main` commit. To undo a release, revert the change on `main` and let the workflow deploy the new commit. Do not retry an old release through local tools. Pull requests run the separate **Test website** workflow without publishing.
+
+New paints receive permanent IDs through the catalogue's Stipplewise sync. If any are still missing, deployment waits and the workflow summary reports how many; the next daily run retries. Never invent IDs or drop pending paints to make a partial snapshot. The catalogue sync runs hourly, so ordinary imports should be ready before the next daily website refresh.
 
 1. Create a Cloudflare API token with **Account → Cloudflare Pages → Edit**, restricted to the hosting account. Follow [Cloudflare's CI guide](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
 2. Add the token as the **CLOUDFLARE_API_TOKEN** [repository Actions secret](https://github.com/paintcommons/website/settings/secrets/actions). Never commit the token or paste it into an issue.
@@ -62,7 +85,7 @@ node scripts/sync-catalog.mjs /path/to/catalog
 node --test scripts/catalogue.test.mjs
 ```
 
-Catalog data carries the repository’s CC0 dedication in `dist/data/LICENSE`; upstream source credits are retained in the JSON and shown in record details.
+The website’s code is under the [MIT licence](LICENSE). Catalog data carries the repository’s CC0 dedication in `dist/data/LICENSE` and source-specific exceptions in `dist/data/THIRD_PARTY_NOTICES.md`. Full source credits are retained in the JSON and shown in record details. The generated `dist/data/catalogue-version.json` identifies the deployed catalogue revision. Scheduled deployments rebuild these files in the runner; they do not create website commits.
 
 ## WWW redirect
 
@@ -112,7 +135,7 @@ User text is escaped so it can't mention people, link issues or inject HTML. The
 
    The private key can be PKCS#1 or PKCS#8. Delete the downloaded `.pem` afterwards, or keep it only in a password manager.
 5. **Rate limit.** In Cloudflare go to Security → WAF → Rate limiting rules. Add a rule for URI path equals `/api/corrections` and method `POST`: block for 10 seconds when an IP exceeds 3 requests in 10 seconds.
-6. Run **Deploy website to Cloudflare Pages** on the authorized `main` revision so `functions/` is included. Secret provisioning is a separate maintainer task, not part of normal contributor setup.
+6. Redeploy through **Deploy website to Cloudflare Pages** on `main`, so `functions/` is included. Keep runtime secret provisioning separate from deploying the website; agents must not upload a local build.
 
 ### Local testing
 
@@ -138,10 +161,14 @@ Then run `npx wrangler@4.164.0 pages dev dist` from the repository root and open
 | `scripts/sync-catalog.mjs` | Rebuilds the bundled snapshot from a committed catalog checkout |
 | `wrangler.jsonc` | Public Pages configuration; secrets remain outside Git |
 
-Before review, run `npm test` and preview the affected page at phone and desktop widths in the Codex in-app browser. Check search/filters, paint details, wall grouping, and missing-colour behavior when those areas change. Test correction requests only in dry-run mode. Use [COPY_STYLE.md](COPY_STYLE.md) for British spelling and factual labels.
+Before review, run `npm test` and `python3 -m unittest discover -s scripts/attribution -p 'test_*.py'` and preview the affected page at phone and desktop widths in the Codex in-app browser. Check search/filters, paint details, wall grouping, and missing-colour behavior when those areas change. Test correction requests only in dry-run mode. Use [COPY_STYLE.md](COPY_STYLE.md) for British spelling and factual labels.
 
 Keep changes to the shared package coordinated with Stipplewise's immutable dependency pin and lockfile; test both consumers for a shared-rule release. A website deployment alone does not update the app's installed package.
 
 ## Contributor attribution
 
-Human contributors use their own Git identities; no per-person email allowlist is required. Agents acting for Jim use his configured identity and must not add agent authors, co-authors, signatures, or generation credits. `scripts/attribution/policy.json` supplies this policy to the shared attribution hooks when installed; the policy file itself does not install hooks or a CI check. Repository access and maintainer review remain separate from attribution validation.
+Human contributors use their own Git identities; no per-person email allowlist is required. Agents acting for Jim use his configured identity and must not add agent authors, co-authors, signatures, or generation credits. The local hooks and GitHub Actions use `scripts/attribution/policy.json`; see [ATTRIBUTION.md](ATTRIBUTION.md) for setup and enforcement. Repository access and maintainer review remain separate from attribution validation.
+
+Duplicate paint IDs from the canonical catalogue are retained in the snapshot’s `aliases` list. Old record URLs resolve to the canonical paint, including its current code, swatch and correction form. Alias IDs are never counted as extra paints.
+
+Wash and glaze names use the same shared predicate for section grouping and smooth swatch rendering. Wash/glaze mediums remain flat auxiliary products in Effects; names such as Washed Out Blue remain ordinary acrylics. Published paint types, colours and gradients are unchanged.
