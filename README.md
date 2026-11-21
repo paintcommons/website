@@ -141,3 +141,7 @@ Then run `npx wrangler@4.164.0 pages dev dist` from the repository root and open
 Before review, run `npm test` and preview the affected page at phone and desktop widths in the Codex in-app browser. Check search/filters, paint details, wall grouping, and missing-colour behavior when those areas change. Test correction requests only in dry-run mode. Use [COPY_STYLE.md](COPY_STYLE.md) for British spelling and factual labels.
 
 Keep changes to the shared package coordinated with Stipplewise's immutable dependency pin and lockfile; test both consumers for a shared-rule release. A website deployment alone does not update the app's installed package.
+
+## Contributor attribution
+
+Human contributors use their own Git identities; no per-person email allowlist is required. Agents acting for Jim use his configured identity and must not add agent authors, co-authors, signatures, or generation credits. `scripts/attribution/policy.json` supplies this policy to the shared attribution hooks when installed; the policy file itself does not install hooks or a CI check. Repository access and maintainer review remain separate from attribution validation.
