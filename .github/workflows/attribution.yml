@@ -1,0 +1,36 @@
+name: Attribution guard
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  attribution:
+    name: Attribution guard
+    runs-on: ubuntu-latest
+    steps:
+      # PR validation always executes the default branch's trusted checker.
+      # Head commits are fetched as data only. No PR code or dependencies run.
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.repository.default_branch || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test guard
+        run: python3 -m unittest discover -s scripts/attribution -p 'test_*.py'
+      - name: Check authors and attribution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Private fork/head objects need authenticated fetch. Keep credentials
+          # scoped to this process; do not save them in the checkout.
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth"
+          python3 scripts/attribution/guard.py ci

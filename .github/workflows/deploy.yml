@@ -27,6 +27,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Check commit attribution
+        run: python3 scripts/attribution/guard.py ci
       - uses: actions/setup-node@v4
         with:
           node-version: 22

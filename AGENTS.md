@@ -12,3 +12,9 @@
 ## Development
 
 Run `npm test` before merging. Local static serving, catalogue bundling and `wrangler pages dev` are available for development. Read `README.md` for setup and the canonical shared paint-grouping package contract with Stipplewise.
+
+## Commit and pull request attribution
+
+Use the configured human Git identity. Never add coding-agent authors, co-authors,
+signatures or generation/assistance credits to commits or pull requests. Do not
+bypass attribution hooks or required checks. See `ATTRIBUTION.md`.
