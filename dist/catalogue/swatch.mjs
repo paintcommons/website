@@ -11,5 +11,5 @@ export function countLabelAppearance(p){
  const luminance=.2126*r+.7152*g+.0722*b;
  return 1.05/(luminance+.05)>=(luminance+.05)/.05
   ?{tone:'dark',color:'#FFFFFF',background:'#242820E6'}
-  :{tone:'light',color:'#20251B',background:'#FFFFFFE6'};
+  :{tone:'light',color:'#242820',background:'#FFFFFFE6'};
 }

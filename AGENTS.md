@@ -1,6 +1,6 @@
 # Paint Commons website: agent instructions
 
-Read `README.md`, `COPY_STYLE.md`, `package.json`, and the relevant tests before editing. This repo owns paintcommons.org and the shared `@paintcommons/paint-groups` package. Public paint facts belong in `paintcommons/catalog`; account data belongs in Stipplewise.
+Read `README.md`, `STYLE_GUIDE.md`, `package.json`, and the relevant tests before editing. This repo owns paintcommons.org and the shared `@paintcommons/paint-groups` package. Public paint facts belong in `paintcommons/catalog`; account data belongs in Stipplewise.
 
 ## Working with contributors
 
@@ -12,7 +12,8 @@ Read `README.md`, `COPY_STYLE.md`, `package.json`, and the relevant tests before
 ## Implementation rules
 
 - `dist/` contains versioned source. Do not delete or regenerate it as if it were build output. There is no frontend build step.
-- Follow `COPY_STYLE.md`: British spelling, sentence case, factual wording, and manufacturer names preserved as published.
+- Follow the voice rules in `STYLE_GUIDE.md`: British spelling, sentence case, factual wording, and manufacturer names preserved as published.
+- Follow `STYLE_GUIDE.md` for anything visual: take colours and fonts from `dist/tokens.css` (no new one-off hex values), keep text contrast at 4.5:1, and use the drawn wordmark in `dist/brand/` rather than typing the name in a heading font.
 - Calculated colour families, wall packing, and generated swatch effects are presentation data. Never write them into public manufacturer facts, fabricate missing swatches, or publish generated gradient stops.
 - Preserve source identifiers, attribution, licences, and record links. Catalog records and colours are approximate facts with source-specific provenance; do not describe all upstream material as CC0.
 - Canonical shared grouping/ramp/packing code lives in `dist/catalogue/color/` and is exported by `package.json`. Coordinate any rule changes with Stipplewise's pinned archive revision, lockfile, and backend module mapping where relevant. Run tests for both consumers. Do not copy proprietary Stipplewise code into this open repo without Jim's authorization.
