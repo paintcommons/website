@@ -1,0 +1,19 @@
+/* Paint Commons design tokens. Every page links this file first; STYLE_GUIDE.md explains each value.
+   Change a colour here, then in STYLE_GUIDE.md (and dist/icon.svg for a pigment). */
+:root{
+ /* Neutrals: warm paper and a green-black ink */
+ --paper:#f8f7f3;--surface:#fffefb;--fill:#eeeee7;
+ --ink:#242820;--text-2:#50564d;--muted:#62665f;
+ --line:#d8dad2;--line-2:#b9c1b2;--control:#808a76;
+ /* The logo's five pigments, as drawn in the icon (illustration and swatch samples only) */
+ --oxide:#8d4036;--ochre:#bc9550;--moss:#61745b;--slate:#517588;--mauve:#9a899b;--frame:#737d69;
+ /* Deep pigments: the same hues dark enough for text (4.5:1 or more on paper and surface) */
+ --ochre-deep:#96682a;--moss-deep:#49684f;--slate-deep:#305d8a;--mauve-deep:#6f5b72;
+ --moss-tint:#e8eee4;--moss-line:#96a98b;
+ /* Roles: use these in components rather than the pigment names */
+ --accent:var(--moss-deep);--link:var(--slate-deep);--focus:var(--ochre-deep);--error:var(--oxide);
+ /* Type */
+ --serif:Georgia,"Times New Roman",Times,serif;
+ --sans:Arial,"Helvetica Neue",Helvetica,sans-serif;
+ --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}

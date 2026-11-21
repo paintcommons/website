@@ -16,7 +16,7 @@ Catalog pull requests and reviewed Stipplewise corrections feed the public catal
 
 The website's code is under the [MIT licence](LICENSE). Catalog data uses CC0 with source-specific exceptions and notices; see the [catalog licence and provenance rules](https://github.com/paintcommons/catalog#licence). Shared code in `dist/catalogue/color/` is MIT. Preserve upstream notices and do not transfer proprietary Stipplewise code here without explicit authorization.
 
-The visual identity and wording follow the project's brand brief, while giving Paint Commons its own reference-library character.
+The visual identity is documented in [STYLE_GUIDE.md](STYLE_GUIDE.md) and the wording in [COPY_STYLE.md](COPY_STYLE.md).
 
 ## Contributing
 
@@ -30,7 +30,7 @@ Everything below covers working on the site: setup, checks, how the catalogue an
 
 ### Development
 
-Read [AGENTS.md](AGENTS.md) and [COPY_STYLE.md](COPY_STYLE.md) before changing the site. Use a feature branch or separate worktree and open a pull request for review.
+Read [AGENTS.md](AGENTS.md), [COPY_STYLE.md](COPY_STYLE.md), and [STYLE_GUIDE.md](STYLE_GUIDE.md) before changing the site. Use a feature branch or separate worktree and open a pull request for review.
 
 The website uses plain HTML, CSS, and JavaScript modules. `dist/` is checked-in source, not disposable build output. There is no application dependency installation or frontend compilation step. Production deployments rebuild the bundled data from the public catalogue. Use Node.js 22 for tests and Python 3 for a static preview:
 
@@ -49,6 +49,8 @@ python3 -m http.server 8765 --directory dist
 | Path | Purpose |
 | --- | --- |
 | `dist/index.html` | Landing page |
+| `dist/tokens.css` | Colour and font tokens shared by every page; see [STYLE_GUIDE.md](STYLE_GUIDE.md) |
+| `dist/brand/` | Wordmark and lockup SVGs, drawn by `scripts/make-wordmark.mjs` from `assets/fonts/cormorant/` |
 | `dist/catalogue/` | Browser UI, filters, colour wall, correction rules, and shared grouping modules |
 | `dist/data/` | Bundled public fallback snapshot and its data licence |
 | `functions/api/corrections.js` | Turnstile validation and GitHub correction issue creation |
