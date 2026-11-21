@@ -5,12 +5,19 @@ signatories, or generators. Ordinary discussion of agents and app features is fi
 Existing history is not rewritten by this guard.
 
 The dependency-free Python validator checks author and committer identities,
-attribution trailers, and assistance/generation credit. Stipplewise accepts Jim's
-existing author emails and the existing GitHub Actions automation identity;
-GitHub's web committer identity is also accepted. Policy lives in
-`scripts/attribution/policy.json`. Paint Commons permits human community authors
-and rejects recognized agent identities and credits. New agent names may need
-adding to the recognizer; this is an attribution policy, not proof of authorship.
+attribution trailers, and assistance/generation credit. Human contributors use
+their own Git identities, including personal, work, and GitHub noreply addresses;
+human co-authors and signatories are allowed. There is no per-person email
+allowlist or enrollment requirement. Agents acting for Jim still use his
+configured identity, as described in `AGENTS.md`.
+
+Policy lives in `scripts/attribution/policy.json`. Setting `authorEmails` to `null`
+allows human identities generally; the recognized-agent and credit checks still
+run first. Paint Commons uses the same open-contributor policy. Repository access,
+maintainer review, and branch protection control who can publish; an attribution
+check is not proof of humanity or authorship. New agent names may need adding to
+the recognizer. Existing GitHub Actions sync and GitHub web committer identities
+remain accepted.
 
 ## Local hooks
 
