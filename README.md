@@ -1,10 +1,18 @@
 # Paint Commons website
 
-The landing page for **paintcommons.org**, an open, living miniature paint reference maintained by the community. This website is separate from the [catalog](https://github.com/paintcommons/catalog) and the Stipplewise app.
+The website and browsable catalogue for **paintcommons.org**, an open, living miniature paint reference maintained by the community. This website is separate from the [catalog](https://github.com/paintcommons/catalog) and the Stipplewise app.
 
 ## Development
 
-The website is plain HTML and CSS. There are no application dependencies or build step. Serve `dist/` with any static HTTP server:
+Read [AGENTS.md](AGENTS.md) and [COPY_STYLE.md](COPY_STYLE.md) before changing the site. Use a feature branch or separate worktree and open a pull request for review. Work on public paint records belongs in [paintcommons/catalog](https://github.com/paintcommons/catalog); changes to the app belong in [Stipplewise](https://github.com/Left47/stipplewise).
+
+The website uses plain HTML, CSS, and JavaScript modules. `dist/` is checked-in source, not disposable build output. There is no bundling step or application dependency installation. Use Node.js 22 for tests and Python 3 for a static preview:
+
+```sh
+npm test
+```
+
+Serve the site locally:
 
 ```sh
 python3 -m http.server 8765 --directory dist
@@ -18,15 +26,13 @@ python3 -m http.server 8765 --directory dist
 - Build output directory: `dist`
 - Framework preset: None
 
-To deploy manually with an authorized Cloudflare account:
-
-```sh
-npx wrangler@4.164.0 pages deploy dist --project-name paintcommons --branch main
-```
+Routine production releases use **Deploy website to Cloudflare Pages** in GitHub Actions. Changes under `dist/`, `functions/`, `wrangler.jsonc`, or the deploy workflow trigger it on `main`; documentation-only commits do not. Obtain Jim's authorization before publishing to `main` or changing live service configuration. Monitor the workflow after a release. The workflow currently deploys without running the test suite, so run `npm test` before review.
 
 ## Content
 
-Contributions through pull requests, APIs, and Stipplewise are described as a planned workflow. Only explicitly submitted and approved information belongs in the public catalog. Published catalog data is CC0. The catalogue's correction form is the only submission route on the site (see below).
+Catalog pull requests and reviewed Stipplewise corrections feed the public catalog through its existing two-way sync. Website correction forms create review issues; they do not edit catalog records directly. Photos are not supported by that form. Only approved public information belongs in the catalogue.
+
+Catalog data uses CC0 with source-specific exceptions and notices; see the [catalog licence and provenance rules](https://github.com/paintcommons/catalog#licence). Shared code in `dist/catalogue/color/` is MIT. Preserve upstream notices and do not transfer proprietary Stipplewise code here without explicit authorization.
 
 The visual identity and wording follow the project’s brand brief, while giving Paint Commons its own reference-library character.
 
@@ -34,7 +40,7 @@ The visual identity and wording follow the project’s brand brief, while giving
 
 The initial release is deployed directly to [Cloudflare Pages](https://paintcommons.pages.dev). Cloudflare's native GitHub integration could not be created because its GitHub App is not installed/configured for the organization. This project therefore uses the supported Direct Upload + GitHub Actions route.
 
-The workflow in `.github/workflows/deploy.yml` deploys changes to `dist/` on `main` (or a manual workflow run). Until credentials are configured, it reports a warning and skips deployment.
+The workflow in `.github/workflows/deploy.yml` deploys matching site, function, configuration, or workflow changes on `main` (or a manual workflow run). Until credentials are configured, it reports a warning and skips deployment.
 
 1. Create a Cloudflare API token with **Account → Cloudflare Pages → Edit**, restricted to the hosting account. Follow [Cloudflare's CI guide](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
 2. Add the token as the **CLOUDFLARE_API_TOKEN** [repository Actions secret](https://github.com/paintcommons/website/settings/secrets/actions). Never commit the token or paste it into an issue.
@@ -106,7 +112,7 @@ User text is escaped so it can't mention people, link issues or inject HTML. The
 
    The private key can be PKCS#1 or PKCS#8. Delete the downloaded `.pem` afterwards, or keep it only in a password manager.
 5. **Rate limit.** In Cloudflare go to Security → WAF → Rate limiting rules. Add a rule for URI path equals `/api/corrections` and method `POST`: block for 10 seconds when an IP exceeds 3 requests in 10 seconds.
-6. Redeploy: the Deploy workflow, or `npx wrangler@4.164.0 pages deploy dist --project-name paintcommons --branch main` from the repository root, so `functions/` is included.
+6. Run **Deploy website to Cloudflare Pages** on the authorized `main` revision so `functions/` is included. Secret provisioning is a separate maintainer task, not part of normal contributor setup.
 
 ### Local testing
 
@@ -118,4 +124,20 @@ TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 CORRECTIONS_DRY_RUN=1
 ```
 
-Then run `npx wrangler@4.164.0 pages dev dist` and open `/catalogue/`. Dry-run mode returns the issue it would create instead of calling GitHub.
+Then run `npx wrangler@4.164.0 pages dev dist` from the repository root and open `/catalogue/` at the address it prints. Dry-run mode returns the issue it would create instead of calling GitHub. A static Python preview cannot execute the Pages Function. Keep `.dev.vars` ignored and do not copy production private keys into a contributor checkout.
+
+## Repository map and review checks
+
+| Path | Purpose |
+| --- | --- |
+| `dist/index.html` | Landing page |
+| `dist/catalogue/` | Browser UI, filters, colour wall, correction rules, and shared grouping modules |
+| `dist/data/` | Bundled public fallback snapshot and its data licence |
+| `functions/api/corrections.js` | Turnstile validation and GitHub correction issue creation |
+| `scripts/catalogue.test.mjs` | Catalogue, wall, provenance, and correction regression tests |
+| `scripts/sync-catalog.mjs` | Rebuilds the bundled snapshot from a committed catalog checkout |
+| `wrangler.jsonc` | Public Pages configuration; secrets remain outside Git |
+
+Before review, run `npm test` and preview the affected page at phone and desktop widths in the Codex in-app browser. Check search/filters, paint details, wall grouping, and missing-colour behavior when those areas change. Test correction requests only in dry-run mode. Use [COPY_STYLE.md](COPY_STYLE.md) for British spelling and factual labels.
+
+Keep changes to the shared package coordinated with Stipplewise's immutable dependency pin and lockfile; test both consumers for a shared-rule release. A website deployment alone does not update the app's installed package.
